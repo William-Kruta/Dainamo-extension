@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dainamo</title>
+    <link rel="stylesheet" href="styles.css" />
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <div class="sidepanel-container">
+      <div class="header">
+        <h1>
+          <img
+            src="./src/assets/dynamo16.png"
+            alt="Dynamo Icon"
+            class="title-icon" />
+          Dainamo
+        </h1>
+        <div class="header-controls">
+          <div class="model-selector">
+            <label for="model-select">Model:</label>
+            <select id="model-select">
+              <option value="llama2">Llama 2</option>
+              <option value="mistral">Mistral</option>
+              <option value="gemma">Gemma</option>
+              <option value="phi">Phi</option>
+              <!-- Add more models as needed -->
+            </select>
+          </div>
+          <div class="theme-toggle">
+            <label class="switch">
+              <input type="checkbox" id="theme-toggle" />
+              <span class="slider round"></span>
+            </label>
+            <span class="theme-label">🌙</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-management">
+        <div class="memory-toggle">
+          <label class="switch">
+            <input type="checkbox" id="memory-toggle" checked />
+            <span class="slider round"></span>
+          </label>
+          <span class="memory-label">Memory: On</span>
+        </div>
+        <div class="chat-actions">
+          <button id="new-chat">New Chat</button>
+          <button id="save-chat">Save Chat</button>
+          <select id="chat-history">
+            <option value="">Load Chat...</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="chat-container">
+        <div id="messages">
+          <div class="message system">
+            <div class="message-content">
+              Hello! I'm your AI assistant powered by Ollama. How can I help you
+              today?
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-container">
+        <textarea
+          id="user-input"
+          placeholder="Type your message here..."
+          rows="3"></textarea>
+        <button id="send-button">Send</button>
+      </div>
+
+      <div class="status-bar">
+        <span id="status-indicator">Disconnected</span>
+        <span id="connection-settings">⚙️</span>
+      </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Connection Settings</h2>
+        <div class="form-group">
+          <label for="ollama-url">Ollama API URL:</label>
+          <input type="text" id="ollama-url" value="http://localhost:11434" />
+        </div>
+        <div class="form-group">
+          <label for="text-size">Text Size:</label>
+          <select id="text-size">
+            <option value="small">Small</option>
+            <option value="medium" selected>Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+        <button id="save-settings">Save Settings</button>
+        <button id="test-connection">Test Connection</button>
+        <div id="connection-test-result"></div>
+        <h4>Created by William Kruta</h4>
+      </div>
+    </div>
+
+    <div id="save-chat-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-save-modal">&times;</span>
+        <h2>Save Chat</h2>
+        <div class="form-group">
+          <label for="chat-name">Chat Name:</label>
+          <input
+            type="text"
+            id="chat-name"
+            placeholder="Enter a name for this chat" />
+        </div>
+        <button id="confirm-save">Save</button>
+      </div>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

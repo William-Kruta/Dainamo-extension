@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Dainamo",
+  "version": "1.0",
+  "description": "Interface to chat with local Large Language Models (LLMs).",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "src/assets/dynamo16.png",
+      "48": "src/assets/dynamo48.png",
+      "128": "src/assets/dynamo128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["contextMenus", "sidePanel", "storage"],
+  "host_permissions": ["http://localhost:11434/*"],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["*"],
+      "matches": ["http://localhost:11434/*"]
+    }
+  ],
+  "icons": {
+    "16": "src/assets/dynamo16.png",
+    "48": "src/assets/dynamo48.png",
+    "128": "src/assets/dynamo128.png"
+  }
+}

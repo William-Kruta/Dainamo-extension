@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dainamo Extension</title>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 15px;
+        width: 300px;
+        color: #333;
+      }
+      h1 {
+        font-size: 18px;
+        margin-top: 0;
+      }
+      button {
+        background-color: #4285f4;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-top: 10px;
+        width: 100%;
+      }
+      button:hover {
+        background-color: #3367d6;
+      }
+      p {
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      .info {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 15px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Ollama Chat Assistant</h1>
+    <p>
+      Highlight text on any webpage and right-click to "Ask Ollama" to analyze
+      companies or entities.
+    </p>
+    <button id="open-sidepanel">Open Ollama Chat</button>
+    <div class="info">
+      <strong>Tip:</strong> Make sure Ollama is running locally on port 11434
+      for this extension to work.
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
