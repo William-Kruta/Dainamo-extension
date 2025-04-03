@@ -339,6 +339,22 @@ select {
   color: var(--text-color);
 }
 
+.form-group small {
+  display: block;
+  color: #666;
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+
+/* Input number style for context tokens */
+input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
 #connection-test-result {
   margin-top: 10px;
   padding: 10px;
@@ -364,6 +380,16 @@ body.dark-theme #connection-test-result.success {
 body.dark-theme #connection-test-result.error {
   background-color: rgba(244, 67, 54, 0.1);
   color: #e57373;
+}
+
+.dark-theme input[type="number"] {
+  background-color: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+.dark-theme .form-group small {
+  color: #aaa;
 }
 
 /* Text size classes */
@@ -476,4 +502,21 @@ body.text-size-large .message .message-content {
   height: 42px;
   vertical-align: middle;
   margin-right: 8px;
+}
+
+#github-logo {
+  width: 20px;
+  height: 20px;
+  margin: 0 5px;
+  cursor: pointer;
+}
+
+.highlight-ai {
+  color: #ff5733; /* Change to your desired color */
+}
+.gradient-ai {
+  background: linear-gradient(to right, #f3cf00, #ed0e9d); /* Adjust colors */
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }

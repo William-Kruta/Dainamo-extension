@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "connection-test-result"
   );
   const ollamaUrlInput = document.getElementById("ollama-url");
+  const contextTokensInput = document.getElementById("context-tokens");
   const themeToggle = document.getElementById("theme-toggle");
   const themeLabel = document.querySelector(".theme-label");
   const textSizeSelect = document.getElementById("text-size");
@@ -47,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // State variables
   let ollamaUrl = localStorage.getItem("ollamaUrl") || "http://localhost:11434";
+  let contextTokens = parseInt(localStorage.getItem("contextTokens") || "2048");
   let memoryEnabled = localStorage.getItem("memoryEnabled") !== "false"; // Default to true
   let currentChatId =
     localStorage.getItem("currentChatId") || `chat-${Date.now()}`;
@@ -54,6 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize UI states
   ollamaUrlInput.value = ollamaUrl;
+  contextTokensInput.value = contextTokens;
   memoryToggle.checked = memoryEnabled;
   memoryLabel.textContent = memoryEnabled ? "Memory: On" : "Memory: Off";
 
@@ -383,6 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
         model: model,
         prompt: prompt,
         stream: false,
+        num_ctx: contextTokens,
       }),
     });
 
@@ -405,6 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
         model: model,
         messages: messages,
         stream: false,
+        num_ctx: contextTokens,
       }),
     });
 
@@ -448,6 +453,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Save API URL
     ollamaUrl = ollamaUrlInput.value.trim();
     localStorage.setItem("ollamaUrl", ollamaUrl);
+
+    // Save context tokens
+    contextTokens = parseInt(contextTokensInput.value) || 2048;
+    localStorage.setItem("contextTokens", contextTokens);
 
     // Save text size
     const selectedTextSize = textSizeSelect.value;
