@@ -27,7 +27,7 @@ By leveraging the power of LLMs, this extension enables users to:
 
 Research stocks without leaving the tab.
 
-<img src="src/assets/videos/tsla_research.gif" width="1920" height="1080">
+<img src="src/assets/videos/tsla_research.gif" width="1280" height="720">
 
 ---
 
