@@ -14,8 +14,14 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["contextMenus", "sidePanel", "storage"],
-  "host_permissions": ["http://localhost:11434/*"],
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "scripting",
+    "sidePanel",
+    "storage"
+  ],
+  "host_permissions": ["*://*/*"],
   "side_panel": {
     "default_path": "sidepanel.html"
   },
@@ -29,5 +35,12 @@
     "16": "src/assets/dynamo16.png",
     "48": "src/assets/dynamo48.png",
     "128": "src/assets/dynamo128.png"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }

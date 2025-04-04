@@ -29,6 +29,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeSaveModal = document.querySelector(".close-save-modal");
   const chatNameInput = document.getElementById("chat-name");
   const confirmSaveButton = document.getElementById("confirm-save");
+  const pageContextToggle = document.getElementById("content-awareness-toggle");
+  const pageContextLabel = document.querySelector(".content-awareness-label");
+
+  // Add to state variables
+  let contentAwarenessEnabled = false;
+
+  if (typeof chrome !== "undefined" && chrome.storage) {
+    chrome.storage.local.get(["contentAwarenessEnabled"], function (result) {
+      contentAwarenessEnabled = result.contentAwarenessEnabled || true; // Default to false.
+      pageContextToggle.checked = contentAwarenessEnabled;
+      updatePageContextLabel();
+
+      // Also sync with background script state
+      if (chrome.runtime) {
+        chrome.runtime.sendMessage(
+          { action: "getContentAwarenessState" },
+          function (response) {
+            if (response && response.enabled !== undefined) {
+              contentAwarenessEnabled = response.enabled;
+              pageContextToggle.checked = contentAwarenessEnabled;
+              updatePageContextLabel();
+            }
+          }
+        );
+      }
+    });
+  }
+
+  // Fix in the sendMessage function where getPageContent is called:
+  // Inside sendMessage() function, replace the page content retrieval code with:
 
   if (chrome.runtime) {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -98,6 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
   closeSaveModal.addEventListener("click", closeSaveChatModal);
   confirmSaveButton.addEventListener("click", saveCurrentChat);
   chatHistorySelect.addEventListener("change", loadSelectedChat);
+  pageContextToggle.addEventListener("change", toggleContentAwareness);
 
   // Click outside modal to close
   window.addEventListener("click", (e) => {
@@ -175,6 +206,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Check for pending query after starting new chat
     checkForPendingQuery();
+  }
+  function toggleContentAwareness() {
+    contentAwarenessEnabled = pageContextToggle.checked;
+    updatePageContextLabel();
+
+    // Save to storage
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.set({ contentAwarenessEnabled });
+    }
+
+    // Sync with background script - ADD ERROR HANDLING
+    if (chrome.runtime) {
+      chrome.runtime.sendMessage(
+        {
+          action: "contentAwarenessStateChanged",
+          enabled: contentAwarenessEnabled,
+        },
+        // Add this callback function to handle errors
+        function (response) {
+          const lastError = chrome.runtime.lastError;
+          if (lastError) {
+            console.log(
+              "Error syncing content awareness state:",
+              lastError.message
+            );
+            // Optionally handle the error scenario
+          }
+        }
+      );
+    }
+
+    // Show status message
+    addMessageToChat(
+      "system",
+      contentAwarenessEnabled
+        ? "Page context is now ON. The AI can access the current page content."
+        : "Page context is now OFF. The AI will not use the current page content."
+    );
+  }
+
+  function updatePageContextLabel() {
+    if (contentAwarenessEnabled) {
+      pageContextLabel.textContent = "Page Context: On";
+    } else {
+      pageContextLabel.textContent = "Page Context: Off";
+    }
   }
 
   function openSaveChatModal() {
@@ -312,11 +389,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const userMessage = userInput.value.trim();
     if (!userMessage) return;
 
-    // Add user message to chat
     addMessageToChat("user", userMessage);
     userInput.value = "";
 
-    // Check connection before sending
     if (!(await checkOllamaConnection())) {
       addMessageToChat(
         "system",
@@ -325,47 +400,165 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Show thinking indicator
     const thinkingId = addMessageToChat("bot", "Thinking...");
 
     try {
       const selectedModel = modelSelect.value;
       let response;
+      let contextEnhancedPrompt = userMessage;
+      let pageContent = null; // Reset pageContent for this message
+
+      if (contentAwarenessEnabled && chrome.runtime) {
+        console.log("Sidepanel: Requesting page content...");
+        try {
+          const pageData = await new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage(
+              { action: "getPageContent" },
+              (response) => {
+                if (chrome.runtime.lastError) {
+                  console.error(
+                    "Sidepanel: Error receiving page content:",
+                    chrome.runtime.lastError.message
+                  );
+                  reject(new Error(chrome.runtime.lastError.message));
+                } else if (response && response.error) {
+                  // Handle errors reported by background script (e.g., restricted page, script failure)
+                  console.warn(
+                    "Sidepanel: Page context retrieval warning:",
+                    response.error
+                  );
+                  // Resolve with the error info, content will be null
+                  resolve({
+                    content: null,
+                    title: response.title,
+                    url: response.url,
+                    error: response.error,
+                  });
+                } else if (response) {
+                  console.log("Sidepanel: Received page content successfully.");
+                  resolve(response); // Contains { content, title, url, error: null }
+                } else {
+                  // This case might indicate an issue in the background script's response logic
+                  console.error(
+                    "Sidepanel: Received empty/invalid response for getPageContent."
+                  );
+                  reject(
+                    new Error("Received empty response from background script")
+                  );
+                }
+              }
+            );
+          });
+
+          // Check if content was successfully retrieved AND is not null/empty
+          if (pageData && pageData.content) {
+            pageContent = pageData.content; // Store for the badge later
+            const pageInfo = `
+  Current page title: ${pageData.title || "N/A"}
+  Current page URL: ${pageData.url || "N/A"}
+  Page content snippet:
+  ---
+  ${pageData.content.substring(0, 1500)}${
+              // Keep truncation logic
+              pageData.content.length > 1500 ? "... (content truncated)" : ""
+            }
+  ---
+            `.trim();
+
+            // Prepend context to the user's actual message
+            contextEnhancedPrompt = `Based on the following context from the current webpage:
+  ${pageInfo}
+  
+  Please answer the user's query: ${userMessage}. Keep your answer short, concise, and use bullet points.`; // Clearer structure
+            console.log("Sidepanel: Using page context.");
+          } else if (pageData && pageData.error) {
+            // Inform user that context couldn't be retrieved, use original prompt
+            addMessageToChat(
+              "system",
+              `Note: Could not use page context. Reason: ${pageData.error}`
+            );
+            console.warn(
+              "Sidepanel: Proceeding without page context due to error:",
+              pageData.error
+            );
+            contextEnhancedPrompt = userMessage; // Fallback to original message
+          } else {
+            // Content was null/empty even without an explicit error
+            addMessageToChat(
+              "system",
+              `Note: Page context could not be retrieved or was empty.`
+            );
+            console.warn(
+              "Sidepanel: Proceeding without page context (content was null/empty)."
+            );
+            contextEnhancedPrompt = userMessage; // Fallback to original message
+          }
+        } catch (error) {
+          console.error("Sidepanel: Failed to get page content:", error);
+          addMessageToChat(
+            "system",
+            `Error retrieving page context: ${error.message}. Using original query.`
+          );
+          contextEnhancedPrompt = userMessage; // Fallback to original message
+        }
+      } else {
+        // Content awareness is off, use original message
+        contextEnhancedPrompt = userMessage;
+        console.log("Sidepanel: Content awareness is OFF.");
+      }
+
+      // --- Now make the API call using `contextEnhancedPrompt` ---
+      console.log(
+        "Sidepanel: Sending prompt to Ollama:",
+        contextEnhancedPrompt
+      );
 
       // Use memory if enabled
       if (memoryEnabled && messageHistory.length > 0) {
-        // Add the new user message to history
+        // Add the potentially context-enhanced user message to history
         messageHistory.push({
           role: "user",
-          content: userMessage,
+          content: contextEnhancedPrompt, // Use the potentially modified prompt
         });
-
-        // Generate response with memory
         response = await generateOllamaResponseWithMemory(
           messageHistory,
           selectedModel
         );
-
-        // Add the response to memory
         messageHistory.push({
           role: "assistant",
           content: response,
         });
       } else {
-        // Generate response without memory
-        response = await generateOllamaResponse(userMessage, selectedModel);
-
-        // If memory is enabled, start tracking
+        // Generate response without memory (or first message with memory on)
+        response = await generateOllamaResponse(
+          contextEnhancedPrompt, // Use the potentially modified prompt
+          selectedModel
+        );
         if (memoryEnabled) {
           messageHistory = [
-            { role: "user", content: userMessage },
+            { role: "user", content: contextEnhancedPrompt },
             { role: "assistant", content: response },
           ];
         }
       }
 
-      // Replace thinking with actual response
+      // Replace "Thinking..." with the actual response
       updateMessage(thinkingId, "bot", formatBotResponse(response));
+
+      // Add badge *only* if pageContent was successfully retrieved in *this* turn
+      if (contentAwarenessEnabled && pageContent) {
+        const messageDiv = document.getElementById(thinkingId);
+        if (messageDiv) {
+          // Check if message still exists
+          const pageContextBadge = document.createElement("div");
+          pageContextBadge.className = "page-context-badge";
+          pageContextBadge.textContent = "Used page context";
+          // Append badge inside the message content for better layout
+          messageDiv
+            .querySelector(".message-content")
+            ?.appendChild(pageContextBadge);
+        }
+      }
     } catch (error) {
       updateMessage(
         thinkingId,

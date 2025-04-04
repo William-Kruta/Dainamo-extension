@@ -420,11 +420,12 @@ body.text-size-large .message .message-content {
 /* Chat management styles */
 .chat-management {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 10px 15px;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--bg-color);
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .memory-toggle {
@@ -432,6 +433,11 @@ body.text-size-large .message .message-content {
   align-items: center;
 }
 
+.memory-toggle,
+.content-awareness-toggle {
+  display: flex;
+  align-items: center;
+}
 .memory-label {
   margin-left: 8px;
   font-size: 14px;
@@ -442,6 +448,7 @@ body.text-size-large .message .message-content {
   display: flex;
   gap: 8px;
   align-items: center;
+  margin-left: auto;
 }
 
 #chat-history {
@@ -480,10 +487,21 @@ body.text-size-large .message .message-content {
 
 /* Mobile responsiveness */
 @media (max-width: 600px) {
-  .chat-management {
+  /* .chat-management {
     flex-direction: column;
     gap: 10px;
     align-items: flex-start;
+  } */
+
+  .chat-management {
+    display: flex;
+    /* justify-content: space-between; This is what's pushing the toggles apart */
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    flex-wrap: wrap;
+    gap: 10px; /* Add gap to control spacing between direct children */
   }
 
   .chat-actions {
@@ -494,6 +512,30 @@ body.text-size-large .message .message-content {
   #chat-history {
     width: auto;
     flex-grow: 1;
+  }
+}
+
+/* Responsive layout for chat management */
+@media (max-width: 768px) {
+  .chat-management {
+    display: flex;
+    /* justify-content: space-between; This is what's pushing the toggles apart */
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    flex-wrap: wrap;
+    gap: 10px; /* Add gap to control spacing between direct children */
+  }
+
+  .memory-toggle,
+  .content-awareness-toggle {
+    flex-basis: 48%;
+  }
+
+  .chat-actions {
+    flex-basis: 100%;
+    justify-content: space-between;
   }
 }
 
@@ -519,4 +561,33 @@ body.text-size-large .message .message-content {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* Page context badge for responses */
+.page-context-badge {
+  display: inline-block;
+  background-color: rgba(66, 133, 244, 0.1);
+  color: var(--primary-color);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-top: 5px;
+  border: 1px solid var(--primary-color);
+}
+
+body.dark-theme .page-context-badge {
+  background-color: rgba(92, 154, 255, 0.1);
+}
+
+/* Content awareness toggle */
+.content-awareness-toggle {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+}
+
+.content-awareness-label {
+  margin-left: 8px;
+  font-size: 14px;
+  color: var(--text-color);
 }
