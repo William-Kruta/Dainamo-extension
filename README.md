@@ -21,17 +21,26 @@ By leveraging the power of LLMs, this extension enables users to:
    - Enable Developer Mode
    - Click "Load unpacked" and select the folder containing this project's files.
 
+---
+
 # Stock Research
 
-<video controls width="600">
-    <source src="video.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
+Research stocks without leaving the tab.
+
+<img src="src/assets/videos/meta_research.gif" width="360" height="640">
+
+---
 
 # Memory Usage
 
-###### On
+### On
 
 When memory usage is on, the model will be able to recall past conversations.
 
 <img src="src/assets/videos/memory_on.gif" width="360" height="640">
+
+### Off
+
+When memory usage is off, the model will be **not** be able to recall past conversations. But it will have a larger **context window**. This could be useful if you need a quick answer for a large piece of text.
+
+<img src="src/assets/videos/memory_off.gif" width="360" height="640">
