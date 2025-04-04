@@ -458,9 +458,9 @@ document.addEventListener("DOMContentLoaded", () => {
   Current page URL: ${pageData.url || "N/A"}
   Page content snippet:
   ---
-  ${pageData.content.substring(0, 1500)}${
+  ${pageData.content.substring(0, 3000)}${
               // Keep truncation logic
-              pageData.content.length > 1500 ? "... (content truncated)" : ""
+              pageData.content.length > 3000 ? "... (content truncated)" : ""
             }
   ---
             `.trim();
@@ -762,9 +762,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const messageDiv = document.createElement("div");
     messageDiv.id = messageId;
     messageDiv.className = `message ${type}`;
-    messageDiv.innerHTML = `<div class="message-content">${
-      type === "user" ? escapeHTML(content) : content
-    }</div>`;
+
+    // Format the content to handle code blocks
+    const formattedContent = formatMessageWithCodeBlocks(content);
+
+    messageDiv.innerHTML = `<div class="message-content">${formattedContent}</div>`;
 
     messagesContainer.appendChild(messageDiv);
 
@@ -772,6 +774,44 @@ document.addEventListener("DOMContentLoaded", () => {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
     return messageId;
+  }
+
+  function _escapeHtml(unsafe) {
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function formatMessageWithCodeBlocks(message) {
+    // Regular expression to find multi-line code blocks (with optional language)
+    const codeBlockRegex = /```([a-zA-Z0-9+\-.]+)?\n([\s\S]*?)\n```/g;
+
+    // Regular expression to find inline code
+    const inlineCodeRegex = /`([^`]+)`/g;
+
+    // Process multi-line code blocks first
+    const messageWithCodeBlocks = message.replace(
+      codeBlockRegex,
+      (match, language, code) => {
+        const languageClass = language ? `language-${language}` : "";
+        return `<pre><code class="${languageClass}">${_escapeHtml(
+          code
+        )}</code></pre>`;
+      }
+    );
+
+    // Process inline code
+    const formattedMessage = messageWithCodeBlocks.replace(
+      inlineCodeRegex,
+      (match, code) => {
+        return `<code>${_escapeHtml(code)}</code>`;
+      }
+    );
+
+    return formattedMessage;
   }
 
   function updateMessage(messageId, type, content) {
