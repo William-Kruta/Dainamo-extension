@@ -23,7 +23,9 @@ By leveraging the power of LLMs, this extension enables users to:
 
 # Stock Research
 
-<figure class="video_container">
-  <iframe src="src/assets/videos/stock_research.mp4" frameborder="0" allowfullscreen="true"> 
-</iframe>
-</figure>
+<video controls width="600">
+    <source src="video.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
+# Memory Usage
