@@ -26,7 +26,7 @@ By leveraging the power of LLMs, this extension enables users to:
 
 2. Download Language Models to your system. You can find them [here](https://ollama.com/search)
 
-3. Open Chrome and navigate to the chrome `chrome://extensions/`
+3. Open Chrome and navigate to `chrome://extensions/`.
    - Enable Developer Mode
    - Click "Load unpacked" and select the folder containing this project's files.
 
