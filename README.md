@@ -31,6 +31,14 @@ Research stocks without leaving the tab.
 
 ---
 
+# Page Context
+
+When enabled, the extension will have access to the current content of the tab you are on. This allows the model to answer questions about the webpage you are currently viewing.
+
+<img src="src/assets/videos/page_context.gif" width="640" height="360">
+
+---
+
 # Memory Usage
 
 ### On
