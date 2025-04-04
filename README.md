@@ -29,3 +29,9 @@ By leveraging the power of LLMs, this extension enables users to:
 </video>
 
 # Memory Usage
+
+###### On
+
+When memory usage is on, the model will be able to recall past conversations.
+
+![memoryOn](src/assets/videos/memory_on.gif)
