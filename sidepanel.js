@@ -32,6 +32,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const pageContextToggle = document.getElementById("content-awareness-toggle");
   const pageContextLabel = document.querySelector(".content-awareness-label");
 
+  // New DOM Element for Delete Chat Button
+  const deleteChatButton =
+    document.getElementById("delete-chat") || createDeleteChatButton();
+
+  // Create delete chat button if it doesn't exist
+  function createDeleteChatButton() {
+    const deleteButton = document.createElement("button");
+    deleteButton.id = "delete-chat";
+    deleteButton.className = "action-button delete-btn";
+    deleteButton.innerHTML = "🗑️ Delete Chat";
+    deleteButton.title = "Delete the selected chat";
+
+    // Insert the delete button after the chat history select dropdown
+    chatHistorySelect.parentNode.insertBefore(
+      deleteButton,
+      chatHistorySelect.nextSibling
+    );
+
+    return deleteButton;
+  }
+
   // Add to state variables
   let contentAwarenessEnabled = false;
 
@@ -88,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ollamaUrlInput.value = ollamaUrl;
   contextTokensInput.value = contextTokens;
   memoryToggle.checked = memoryEnabled;
-  memoryLabel.textContent = memoryEnabled ? "Memory: On" : "Memory: Off";
+  memoryLabel.textContent = "Memory";
 
   // Load text size preference
   const textSize = localStorage.getItem("textSize") || "medium";
@@ -130,6 +151,9 @@ document.addEventListener("DOMContentLoaded", () => {
   chatHistorySelect.addEventListener("change", loadSelectedChat);
   pageContextToggle.addEventListener("change", toggleContentAwareness);
 
+  // New Event Listener for Delete Chat Button
+  deleteChatButton.addEventListener("click", deleteSelectedChat);
+
   // Click outside modal to close
   window.addEventListener("click", (e) => {
     if (e.target === settingsModal) {
@@ -143,6 +167,54 @@ document.addEventListener("DOMContentLoaded", () => {
   // Check connection on load
   checkOllamaConnection();
 
+  // Function to delete the selected chat
+  function deleteSelectedChat() {
+    const selectedChatId = chatHistorySelect.value;
+
+    // Check if a chat is selected
+    if (!selectedChatId) {
+      addMessageToChat("system", "Please select a chat to delete");
+      return;
+    }
+
+    // Get confirmation before deleting
+    if (confirm("Are you sure you want to delete this chat?")) {
+      // Get existing chats
+      const savedChats = JSON.parse(localStorage.getItem("savedChats") || "{}");
+
+      // Delete the selected chat
+      if (savedChats[selectedChatId]) {
+        delete savedChats[selectedChatId];
+        localStorage.setItem("savedChats", JSON.stringify(savedChats));
+
+        // If we're deleting the current chat, start a new chat without auto-saving
+        if (currentChatId === selectedChatId) {
+          // Create new chat ID
+          currentChatId = `chat-${Date.now()}`;
+          localStorage.setItem("currentChatId", currentChatId);
+
+          // Clear message container except for the welcome message
+          messagesContainer.innerHTML = `<div class="message system">
+                <div class="message-content">
+                  Hello! I'm your AI assistant powered by Ollama. How can I help you today?
+                </div>
+              </div>`;
+
+          // Reset message history if memory is enabled
+          messageHistory = [];
+
+          // Reset chat history dropdown
+          chatHistorySelect.value = "";
+        }
+
+        // Reload the saved chats dropdown
+        loadSavedChats();
+
+        // Show success message
+        addMessageToChat("system", "Chat deleted successfully");
+      }
+    }
+  }
   // New function to check for pending query from context menu
   function checkForPendingQuery() {
     if (typeof chrome !== "undefined" && chrome.storage) {
@@ -308,6 +380,15 @@ document.addEventListener("DOMContentLoaded", () => {
       option.textContent = chat.name;
       chatHistorySelect.appendChild(option);
     });
+
+    // Update the delete button state
+    updateDeleteButtonState();
+  }
+
+  // New function to update delete button state
+  function updateDeleteButtonState() {
+    const selectedChatId = chatHistorySelect.value;
+    deleteChatButton.disabled = !selectedChatId;
   }
 
   function loadSelectedChat() {
@@ -342,6 +423,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Scroll to bottom
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      // Update delete button state
+      updateDeleteButtonState();
     }
   }
 
@@ -351,6 +435,9 @@ document.addEventListener("DOMContentLoaded", () => {
       chatHistorySelect.value = currentChatId;
       loadSelectedChat();
     }
+
+    // Update delete button state
+    updateDeleteButtonState();
   }
 
   function getAllMessagesFromDOM() {
