@@ -38,7 +38,7 @@ By leveraging the power of LLMs, this extension enables users to:
    - B. Click "New" to create a new environment variable.
      ![New environment variable](src/assets/add_env.PNG.PNG)
    - C. Set the name of the variable as `OLLAMA_ORIGINS` and set its value to `chrome-extension://`.
-     ![Add Ollama Origins](src/assets/var_creation.PNG)
+     <img src="src/assets/var_creation.PNG" width="360" height="640">
 
 ---
 
