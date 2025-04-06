@@ -15,6 +15,7 @@ By leveraging the power of LLMs, this extension enables users to:
 
 - [Stock Research](#stock-research)
 - [Page Context](#page-context)
+- [Web Search](#search-the-web)
 - [Memory Usage](#memory-usage)
 - [Settings](#settings)
 
