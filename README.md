@@ -22,23 +22,23 @@ By leveraging the power of LLMs, this extension enables users to:
 
 # Getting Started
 
-1. Install `Ollama` on your system to run locall llms. You can find the installation [here](https://ollama.com/)
+**1**. Install `Ollama` on your system to run locall llms. You can find the installation [here](https://ollama.com/)
 
-2. Download Language Models to your system. You can find them [here](https://ollama.com/search)
+**2**. Download Language Models to your system. You can find them [here](https://ollama.com/search)
 
-3. Open Chrome and navigate to `chrome://extensions/`.
+**3**. Open Chrome and navigate to `chrome://extensions/`.
 
-   - Enable Developer Mode
-   - Click "Load unpacked" and select the folder containing this project's files.
+- Enable Developer Mode
+- Click "Load unpacked" and select the folder containing this project's files.
 
-4. **Windows**:
+**4**. **Windows**:
 
-   - A. In the Windows menu type `Edit environment variables for your account`, and select the option shown below.
-     <img src="src/assets/windows_edit_env.PNG" width="360" height="640">
-   - B. Click `New` to create a new environment variable.
-     <img src="src/assets/add_env.PNG" width="640" height="360">
-   - C. Set the name of the variable as `OLLAMA_ORIGINS` and set its value to `chrome-extension://`.
-     <img src="src/assets/var_creation.PNG" width="640" height="360">
+- **A**. In the Windows menu type `Edit environment variables for your account`, and select the option shown below.
+  <img src="src/assets/windows_edit_env.PNG" width="360" height="640">
+- **B**. Click `New` to create a new environment variable.
+  <img src="src/assets/add_env.PNG" width="640" height="360">
+- **C**. Set the name of the variable as `OLLAMA_ORIGINS` and set its value to `chrome-extension://`.
+  <img src="src/assets/var_creation.PNG" width="640" height="360">
 
 ---
 
@@ -55,6 +55,22 @@ Research stocks without leaving the tab.
 When enabled, the extension will have access to the current content of the tab you are on. This allows the model to answer questions about the webpage you are currently viewing.
 
 <img src="src/assets/videos/page_context.gif" width="640" height="360">
+
+---
+
+# Search The Web
+
+### On
+
+Search the internet to allow your model to have the most up to date information.
+
+<img src="src/assets/videos/search_on.gif" width="360" height="640">
+
+### Off
+
+With search off, you will be limited to the information in the model's training data.
+
+<img src="src/assets/videos/search_off.gif" width="360" height="640">
 
 ---
 
