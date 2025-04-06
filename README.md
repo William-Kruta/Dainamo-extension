@@ -36,7 +36,7 @@ By leveraging the power of LLMs, this extension enables users to:
    - A. In the Windows menu type "Edit environment variables for your account".
      ![Edit environment variables for your account](src/assets/windows_edit_env.PNG)
    - B. Click "New" to create a new environment variable.
-     ![New environment variable](src/assets/add_env.PNG.PNG)
+     <img src="src/assets/add_env.PNG" width="640" height="360">
    - C. Set the name of the variable as `OLLAMA_ORIGINS` and set its value to `chrome-extension://`.
      <img src="src/assets/var_creation.PNG" width="360" height="640">
 
