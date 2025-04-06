@@ -196,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // Clear message container except for the welcome message
           messagesContainer.innerHTML = `<div class="message system">
                 <div class="message-content">
-                  Hello! I'm your AI assistant powered by Ollama. How can I help you today?
+                  How can I help you today?
                 </div>
               </div>`;
 
@@ -255,8 +255,20 @@ document.addEventListener("DOMContentLoaded", () => {
     // Save current chat before starting a new one
     if (getAllMessagesFromDOM().length > 1) {
       // More than just the welcome message
-      const autoSaveName = `Unnamed Chat ${new Date().toLocaleString()}`;
-      saveChat(currentChatId, autoSaveName, getAllMessagesFromDOM());
+      // Get existing saved chats
+      const savedChats = JSON.parse(localStorage.getItem("savedChats") || "{}");
+
+      // Check if this chat already has a name
+      let chatName;
+      if (savedChats[currentChatId] && savedChats[currentChatId].name) {
+        // Use the existing name
+        chatName = savedChats[currentChatId].name;
+      } else {
+        // Use default name for new chats
+        chatName = `Unnamed Chat ${new Date().toLocaleString()}`;
+      }
+
+      saveChat(currentChatId, chatName, getAllMessagesFromDOM());
     }
 
     // Create new chat
@@ -266,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Clear message container except for the welcome message
     messagesContainer.innerHTML = `<div class="message system">
           <div class="message-content">
-            Hello! I'm your AI assistant powered by Ollama. How can I help you today?
+            How can I help you today?
           </div>
         </div>`;
 
@@ -279,6 +291,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Check for pending query after starting new chat
     checkForPendingQuery();
   }
+
+  /**
+   * @description Toggles the content awareness feature on or off.
+   */
   function toggleContentAwareness() {
     contentAwarenessEnabled = pageContextToggle.checked;
     updatePageContextLabel();

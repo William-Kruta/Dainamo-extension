@@ -27,8 +27,18 @@ By leveraging the power of LLMs, this extension enables users to:
 2. Download Language Models to your system. You can find them [here](https://ollama.com/search)
 
 3. Open Chrome and navigate to `chrome://extensions/`.
+
    - Enable Developer Mode
    - Click "Load unpacked" and select the folder containing this project's files.
+
+4. **Windows**:
+
+   - A. In the Windows menu type "Edit environment variables for your account".
+     ![Edit environment variables for your account](src/assets/windows_edit_env.PNG)
+   - B. Click "New" to create a new environment variable.
+     ![New environment variable](src/assets/add_env.PNG.PNG)
+   - C. Set the name of the variable as `OLLAMA_ORIGINS` and set its value to `chrome-extension://`.
+     ![Add Ollama Origins](src/assets/var_creation.PNG)
 
 ---
 
