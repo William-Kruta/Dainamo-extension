@@ -18,8 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const themeToggle = document.getElementById("theme-toggle");
   const themeLabel = document.querySelector(".theme-label");
   const textSizeSelect = document.getElementById("text-size");
-
-  // DOM Elements - New
   const memoryToggle = document.getElementById("memory-toggle");
   const memoryLabel = document.querySelector(".memory-label");
   const newChatButton = document.getElementById("new-chat");
@@ -31,8 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmSaveButton = document.getElementById("confirm-save");
   const pageContextToggle = document.getElementById("content-awareness-toggle");
   const pageContextLabel = document.querySelector(".content-awareness-label");
-
-  // New DOM Element for Delete Chat Button
+  const searchToggle = document.getElementById("search-toggle");
+  const searchLabel = document.querySelector(".search-label");
   const deleteChatButton =
     document.getElementById("delete-chat") || createDeleteChatButton();
 
@@ -41,13 +39,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteButton = document.createElement("button");
     deleteButton.id = "delete-chat";
     deleteButton.className = "action-button delete-btn";
-    deleteButton.innerHTML = "🗑️ Delete Chat";
+    deleteButton.innerHTML = "Delete Chat";
     deleteButton.title = "Delete the selected chat";
 
     // Insert the delete button after the chat history select dropdown
     chatHistorySelect.parentNode.insertBefore(
       deleteButton,
-      chatHistorySelect.nextSibling
+      chatHistorySelect.previousSibling
     );
 
     return deleteButton;
@@ -55,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Add to state variables
   let contentAwarenessEnabled = false;
+  let searchEnabled = false;
 
   if (typeof chrome !== "undefined" && chrome.storage) {
     chrome.storage.local.get(["contentAwarenessEnabled"], function (result) {
@@ -133,7 +132,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Check for pending query from context menu
   checkForPendingQuery();
 
-  // Event Listeners - Existing
   themeToggle.addEventListener("change", toggleTheme);
   sendButton.addEventListener("click", sendMessage);
   userInput.addEventListener("keydown", handleEnterKey);
@@ -141,8 +139,6 @@ document.addEventListener("DOMContentLoaded", () => {
   closeModal.addEventListener("click", closeSettingsModal);
   saveSettings.addEventListener("click", saveAndCloseSettings);
   testConnection.addEventListener("click", testConnectionHandler);
-
-  // Event Listeners - New
   memoryToggle.addEventListener("change", toggleMemory);
   newChatButton.addEventListener("click", startNewChat);
   saveChatButton.addEventListener("click", openSaveChatModal);
@@ -150,6 +146,10 @@ document.addEventListener("DOMContentLoaded", () => {
   confirmSaveButton.addEventListener("click", saveCurrentChat);
   chatHistorySelect.addEventListener("change", loadSelectedChat);
   pageContextToggle.addEventListener("change", toggleContentAwareness);
+  searchToggle.addEventListener("change", (e) => {
+    searchEnabled = e.target.checked;
+    searchLabel.textContent = `Search`;
+  });
 
   // New Event Listener for Delete Chat Button
   deleteChatButton.addEventListener("click", deleteSelectedChat);
@@ -320,9 +320,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updatePageContextLabel() {
     if (contentAwarenessEnabled) {
-      pageContextLabel.textContent = "Page Context: On";
+      pageContextLabel.textContent = "Page Context";
     } else {
-      pageContextLabel.textContent = "Page Context: Off";
+      pageContextLabel.textContent = "Page Context";
     }
   }
 
@@ -488,137 +488,90 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const thinkingId = addMessageToChat("bot", "Thinking...");
+    const selectedModel = modelSelect.value;
+
+    let contextEnhancedPrompt = userMessage;
+    let pageContent = null;
+    let searchResults = null;
 
     try {
-      const selectedModel = modelSelect.value;
-      let response;
-      let contextEnhancedPrompt = userMessage;
-      let pageContent = null; // Reset pageContent for this message
-
+      // --- Get Page Content ---
       if (contentAwarenessEnabled && chrome.runtime) {
-        console.log("Sidepanel: Requesting page content...");
         try {
           const pageData = await new Promise((resolve, reject) => {
             chrome.runtime.sendMessage(
               { action: "getPageContent" },
               (response) => {
                 if (chrome.runtime.lastError) {
-                  console.error(
-                    "Sidepanel: Error receiving page content:",
-                    chrome.runtime.lastError.message
-                  );
                   reject(new Error(chrome.runtime.lastError.message));
-                } else if (response && response.error) {
-                  // Handle errors reported by background script (e.g., restricted page, script failure)
-                  console.warn(
-                    "Sidepanel: Page context retrieval warning:",
-                    response.error
-                  );
-                  // Resolve with the error info, content will be null
-                  resolve({
-                    content: null,
-                    title: response.title,
-                    url: response.url,
-                    error: response.error,
-                  });
-                } else if (response) {
-                  console.log("Sidepanel: Received page content successfully.");
-                  resolve(response); // Contains { content, title, url, error: null }
                 } else {
-                  // This case might indicate an issue in the background script's response logic
-                  console.error(
-                    "Sidepanel: Received empty/invalid response for getPageContent."
-                  );
-                  reject(
-                    new Error("Received empty response from background script")
-                  );
+                  resolve(response);
                 }
               }
             );
           });
 
-          // Check if content was successfully retrieved AND is not null/empty
-          if (pageData && pageData.content) {
-            pageContent = pageData.content; // Store for the badge later
-            const pageInfo = `
-  Current page title: ${pageData.title || "N/A"}
-  Current page URL: ${pageData.url || "N/A"}
-  Page content snippet:
+          if (pageData?.content) {
+            pageContent = pageData.content;
+            const snippet = pageData.content.substring(0, 3000);
+            contextEnhancedPrompt = `
+  Based on the following context from the current webpage:
+  Title: ${pageData.title}
+  URL: ${pageData.url}
+  Content:
   ---
-  ${pageData.content.substring(0, 3000)}${
-              // Keep truncation logic
-              pageData.content.length > 3000 ? "... (content truncated)" : ""
-            }
+  ${snippet}${snippet.length === 3000 ? "... (truncated)" : ""}
   ---
-            `.trim();
-
-            // Prepend context to the user's actual message
-            contextEnhancedPrompt = `Based on the following context from the current webpage:
-  ${pageInfo}
-  
-  Please answer the user's query: ${userMessage}. Keep your answer short, concise, and use bullet points.`; // Clearer structure
-            console.log("Sidepanel: Using page context.");
-          } else if (pageData && pageData.error) {
-            // Inform user that context couldn't be retrieved, use original prompt
-            addMessageToChat(
-              "system",
-              `Note: Could not use page context. Reason: ${pageData.error}`
-            );
-            console.warn(
-              "Sidepanel: Proceeding without page context due to error:",
-              pageData.error
-            );
-            contextEnhancedPrompt = userMessage; // Fallback to original message
-          } else {
-            // Content was null/empty even without an explicit error
-            addMessageToChat(
-              "system",
-              `Note: Page context could not be retrieved or was empty.`
-            );
-            console.warn(
-              "Sidepanel: Proceeding without page context (content was null/empty)."
-            );
-            contextEnhancedPrompt = userMessage; // Fallback to original message
+  User's query: ${userMessage}
+  `.trim();
+          } else if (pageData?.error) {
+            addMessageToChat("system", `Page context error: ${pageData.error}`);
           }
-        } catch (error) {
-          console.error("Sidepanel: Failed to get page content:", error);
-          addMessageToChat(
-            "system",
-            `Error retrieving page context: ${error.message}. Using original query.`
-          );
-          contextEnhancedPrompt = userMessage; // Fallback to original message
+        } catch (err) {
+          console.warn("Failed to get page content:", err.message);
         }
-      } else {
-        // Content awareness is off, use original message
-        contextEnhancedPrompt = userMessage;
-        console.log("Sidepanel: Content awareness is OFF.");
       }
 
-      // --- Now make the API call using `contextEnhancedPrompt` ---
-      console.log(
-        "Sidepanel: Sending prompt to Ollama:",
-        contextEnhancedPrompt
-      );
+      // --- Get Search Results ---
+      if (searchEnabled && chrome.runtime) {
+        try {
+          let results = await performSearch(userMessage);
+          //results = await fetchFullContent(results);
+          console.log(`Results1: ${results}`);
+          results = parseSearchResults(results);
+          results = results
+            .map(
+              (result) =>
+                `Title: ${result.title}\nURL: ${result.url}\nSnippet: ${result.snippet}`
+            )
+            .join("\n\n");
 
-      // Use memory if enabled
+          //console.log(`Results: ${formattedResults}`);
+          if (results) {
+            contextEnhancedPrompt += `
+  
+  Additional information from search results:
+  ---
+  ${results}
+  ---`;
+          }
+        } catch (err) {
+          console.warn("Search failed:", err.message);
+        }
+      }
+
+      // --- Generate Response ---
+      let response;
       if (memoryEnabled && messageHistory.length > 0) {
-        // Add the potentially context-enhanced user message to history
-        messageHistory.push({
-          role: "user",
-          content: contextEnhancedPrompt, // Use the potentially modified prompt
-        });
+        messageHistory.push({ role: "user", content: contextEnhancedPrompt });
         response = await generateOllamaResponseWithMemory(
           messageHistory,
           selectedModel
         );
-        messageHistory.push({
-          role: "assistant",
-          content: response,
-        });
+        messageHistory.push({ role: "assistant", content: response });
       } else {
-        // Generate response without memory (or first message with memory on)
         response = await generateOllamaResponse(
-          contextEnhancedPrompt, // Use the potentially modified prompt
+          contextEnhancedPrompt,
           selectedModel
         );
         if (memoryEnabled) {
@@ -629,30 +582,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Replace "Thinking..." with the actual response
       updateMessage(thinkingId, "bot", formatBotResponse(response));
-
-      // Add badge *only* if pageContent was successfully retrieved in *this* turn
-      if (contentAwarenessEnabled && pageContent) {
-        const messageDiv = document.getElementById(thinkingId);
-        if (messageDiv) {
-          // Check if message still exists
-          const pageContextBadge = document.createElement("div");
-          pageContextBadge.className = "page-context-badge";
-          pageContextBadge.textContent = "Used page context";
-          // Append badge inside the message content for better layout
-          messageDiv
-            .querySelector(".message-content")
-            ?.appendChild(pageContextBadge);
-        }
-      }
     } catch (error) {
       updateMessage(
         thinkingId,
         "system",
-        `Error: ${error.message || "Failed to get response"}`
+        `Error: ${error.message || "Failed to respond."}`
       );
-      console.error("Ollama API error:", error);
     }
   }
 
@@ -700,6 +636,125 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const data = await response.json();
     return data.message.content;
+  }
+
+  async function fetchSearchContext(query) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { action: "performGoogleSearch", query },
+        (response) => {
+          resolve(response?.snippets || "");
+        }
+      );
+    });
+  }
+
+  async function performSearch(query) {
+    const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(
+      query
+    )}`;
+
+    try {
+      const response = await fetch(searchUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+      return null;
+    }
+  }
+
+  function parseSearchResults(html) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    const results = [];
+    const resultElements = doc.querySelectorAll(".b_algo");
+
+    resultElements.forEach((element) => {
+      const titleElement = element.querySelector("h2 a");
+      const snippetElement = element.querySelector(".b_caption p");
+      const urlElement = element.querySelector("cite");
+      const dateElement = element.querySelector(".news_dt");
+      // Look for other metadata Bing might provide
+      const metadataElements = element.querySelectorAll(".b_factrow");
+
+      let metadata = {};
+      metadataElements.forEach((meta) => {
+        metadata[meta.querySelector("strong")?.textContent || "info"] =
+          meta.querySelector(":not(strong)")?.textContent || "";
+      });
+
+      results.push({
+        title: titleElement?.textContent || "",
+        url: titleElement?.href || "",
+        displayUrl: urlElement?.textContent || "",
+        snippet: snippetElement?.textContent || "",
+        date: dateElement?.textContent || "",
+        metadata: metadata,
+      });
+    });
+
+    return results;
+  }
+
+  async function fetchFullContent(searchResults, maxPages = 5) {
+    const enrichedResults = [];
+
+    // Only process a limited number of results to avoid excessive requests
+    for (let i = 0; i < Math.min(searchResults.length, maxPages); i++) {
+      const result = searchResults[i];
+
+      try {
+        const response = await fetch(result.url);
+        if (!response.ok) continue;
+
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        // Extract main content (this is a simplified approach)
+        // For better results, consider using a content extraction library
+        const contentElements = doc.querySelectorAll(
+          "p, h1, h2, h3, h4, h5, h6"
+        );
+        let fullContent = "";
+
+        contentElements.forEach((el) => {
+          const text = el.textContent.trim();
+          if (text.length > 20) {
+            // Simple filter to avoid menu items, etc.
+            fullContent += text + "\n\n";
+          }
+        });
+
+        enrichedResults.push({
+          ...result,
+          fullContent: fullContent.substring(0, 5000), // Limit content length
+        });
+      } catch (error) {
+        console.error(`Error fetching content from ${result.url}:`, error);
+        enrichedResults.push(result); // Keep the original result without full content
+      }
+
+      // Add a delay to avoid triggering rate limits
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    return enrichedResults;
+  }
+
+  async function fetchGoogleSearchContext(query) {
+    const response = await fetch(
+      `https://serpapi.com/search.json?q=${encodeURIComponent(
+        query
+      )}&api_key=YOUR_API_KEY`
+    );
+    const data = await response.json();
+    return data.organic_results?.map((r) => r.snippet).join("\n") || "";
   }
 
   function toggleTheme() {

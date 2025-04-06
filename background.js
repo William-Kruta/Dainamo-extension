@@ -185,6 +185,60 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       );
     });
     return true; // Indicate async response
+  } else if (message.action === "performGoogleSearch") {
+    const query = encodeURIComponent(message.query);
+
+    chrome.search;
+    const searchUrl = `https://www.bing.com/search?q=${query}`;
+    console.log(`Search Url: ${searchUrl}`);
+    // Using DuckDuckGo's Instant Answer API
+    fetch(searchUrl)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Search API returned ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Extract abstract and related topics
+        console.log(`Data222: ${JSON.stringify(data, null, 2)}`);
+        let searchResults = [];
+
+        // Default to answer if available, otherwise use abstract text
+        if (data.Answer) {
+          searchResults.push(`Answer: ${data.Answer}`);
+        } else {
+          if (data.AbstractText) {
+            searchResults.push(`Abstract: ${data.AbstractText}`);
+          }
+        }
+
+        // Add related topics
+        if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+          const topics = data.RelatedTopics.filter((topic) => topic.Text) // Only topics with text
+            .slice(0, 4) // Limit to 4 topics
+            .map((topic) => topic.Text);
+
+          searchResults = [...searchResults, ...topics];
+        }
+
+        // Send response back to caller
+        sendResponse({
+          snippets:
+            searchResults.length > 0
+              ? searchResults.join("\n\n")
+              : "No relevant search results found",
+        });
+      })
+      .catch((err) => {
+        console.error("Search error:", err);
+        sendResponse({
+          snippets: `Failed to perform search: ${err.message}`,
+          error: err.message,
+        });
+      });
+
+    return true; // Required for async response
   }
 
   // --- Get current awareness state ---
@@ -214,7 +268,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // This message is listened for by sidepanel.js, background doesn't need to respond
     console.log("Background: Notifying side panel of new query.");
   }
-
   // Return false or nothing if no async response is needed for this message type
   // return false;
 });

@@ -444,6 +444,18 @@ body.text-size-large .message .message-content {
   color: var(--text-color);
 }
 
+.memory-toggle,
+.search-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.search-label {
+  margin-left: 8px;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
 .chat-actions {
   display: flex;
   gap: 8px;
@@ -592,6 +604,11 @@ body.dark-theme .page-context-badge {
   color: var(--text-color);
 }
 
+#save-chat {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
 /* Delete Chat Button Styles */
 .delete-btn {
   background-color: #ff4444;
@@ -602,7 +619,6 @@ body.dark-theme .page-context-badge {
   cursor: pointer;
   font-size: 12px;
   transition: background-color 0.3s ease;
-  margin-left: 8px;
   display: inline-flex;
   align-items: center;
 }
