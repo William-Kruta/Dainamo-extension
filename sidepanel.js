@@ -1,3 +1,21 @@
+// Ollama response
+import {
+  generateOllamaResponse,
+  generateOllamaResponseWithMemory,
+  testOllamaConnection,
+  optimizeSearchQuery,
+} from "./src/responses/ollama-response.js";
+// Response Formatting
+import {
+  formatBotResponse,
+  formatMessageWithCodeBlocks,
+} from "./src/responses/format-response.js";
+
+import {
+  performSearch,
+  parseSearchResults,
+} from "./src/functions/web-search.js";
+
 document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements - Existing
   const messagesContainer = document.getElementById("messages");
@@ -54,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Add to state variables
   let contentAwarenessEnabled = false;
   let searchEnabled = false;
+  let initialized = false;
 
   if (typeof chrome !== "undefined" && chrome.storage) {
     chrome.storage.local.get(["contentAwarenessEnabled"], function (result) {
@@ -103,6 +122,14 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentChatId =
     localStorage.getItem("currentChatId") || `chat-${Date.now()}`;
   let messageHistory = []; // To store conversation context when memory is enabled
+  const savedModel = localStorage.getItem("selectedModel");
+  console.log(`Saved model12222: ${savedModel}`);
+  let preferredModel;
+  if (savedModel) {
+    // We'll set this after loading available models
+    preferredModel = savedModel;
+  }
+  console.log(`Preferred: 222: ${preferredModel}`);
 
   // Initialize UI states
   ollamaUrlInput.value = ollamaUrl;
@@ -150,6 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
     searchEnabled = e.target.checked;
     searchLabel.textContent = `Search`;
   });
+  modelSelect.addEventListener("change", saveSelectedModel);
 
   // New Event Listener for Delete Chat Button
   deleteChatButton.addEventListener("click", deleteSelectedChat);
@@ -351,6 +379,16 @@ document.addEventListener("DOMContentLoaded", () => {
     saveChatModal.style.display = "none";
   }
 
+  function saveSelectedModel() {
+    const selectedModel = modelSelect.value;
+    console.log(`Selected model: ${selectedModel}`);
+    localStorage.setItem("selectedModel", selectedModel);
+  }
+
+  function updatePreferredModel(modelName) {
+    localStorage.setItem("selectedModel", modelName);
+  }
+
   function saveCurrentChat() {
     const chatName =
       chatNameInput.value.trim() || `Chat ${new Date().toLocaleString()}`;
@@ -489,6 +527,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Functions - Existing (modified for memory support)
   async function sendMessage() {
+    // Start the timer
+    const startTime = performance.now();
     const userMessage = userInput.value.trim();
     if (!userMessage) return;
 
@@ -551,6 +591,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // --- Get Search Results ---
       if (searchEnabled && chrome.runtime) {
         try {
+          // const optimizedQuery = await optimizeSearchQuery(
+          //   userMessage,
+          //   selectedModel
+          // );
           let results = await performSearch(userMessage);
           //results = await fetchFullContent(results);
           console.log(`Results1: ${results}`);
@@ -582,13 +626,17 @@ document.addEventListener("DOMContentLoaded", () => {
         messageHistory.push({ role: "user", content: contextEnhancedPrompt });
         response = await generateOllamaResponseWithMemory(
           messageHistory,
-          selectedModel
+          selectedModel,
+          contextTokens,
+          ollamaUrl
         );
         messageHistory.push({ role: "assistant", content: response });
       } else {
         response = await generateOllamaResponse(
           contextEnhancedPrompt,
-          selectedModel
+          selectedModel,
+          contextTokens,
+          ollamaUrl
         );
         if (memoryEnabled) {
           messageHistory = [
@@ -597,8 +645,11 @@ document.addEventListener("DOMContentLoaded", () => {
           ];
         }
       }
-
+      // End the timer
+      const endTime = performance.now();
+      const responseTime = endTime - startTime;
       updateMessage(thinkingId, "bot", formatBotResponse(response));
+      addTimerToMessage(thinkingId, responseTime);
     } catch (error) {
       updateMessage(
         thinkingId,
@@ -606,171 +657,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `Error: ${error.message || "Failed to respond."}`
       );
     }
-  }
-
-  async function generateOllamaResponse(prompt, model) {
-    const response = await fetch(`${ollamaUrl}/api/generate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: model,
-        prompt: prompt,
-        stream: false,
-        num_ctx: contextTokens,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API returned ${response.status}: ${errorText}`);
-    }
-
-    const data = await response.json();
-    return data.response;
-  }
-
-  async function generateOllamaResponseWithMemory(messages, model) {
-    const response = await fetch(`${ollamaUrl}/api/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: messages,
-        stream: false,
-        num_ctx: contextTokens,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API returned ${response.status}: ${errorText}`);
-    }
-
-    const data = await response.json();
-    return data.message.content;
-  }
-
-  async function fetchSearchContext(query) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage(
-        { action: "performGoogleSearch", query },
-        (response) => {
-          resolve(response?.snippets || "");
-        }
-      );
-    });
-  }
-
-  async function performSearch(query) {
-    const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(
-      query
-    )}`;
-
-    try {
-      const response = await fetch(searchUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const html = await response.text();
-      return html;
-    } catch (error) {
-      console.error("Error fetching search results:", error);
-      return null;
-    }
-  }
-
-  function parseSearchResults(html) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-
-    const results = [];
-    const resultElements = doc.querySelectorAll(".b_algo");
-
-    resultElements.forEach((element) => {
-      const titleElement = element.querySelector("h2 a");
-      const snippetElement = element.querySelector(".b_caption p");
-      const urlElement = element.querySelector("cite");
-      const dateElement = element.querySelector(".news_dt");
-      // Look for other metadata Bing might provide
-      const metadataElements = element.querySelectorAll(".b_factrow");
-
-      let metadata = {};
-      metadataElements.forEach((meta) => {
-        metadata[meta.querySelector("strong")?.textContent || "info"] =
-          meta.querySelector(":not(strong)")?.textContent || "";
-      });
-
-      results.push({
-        title: titleElement?.textContent || "",
-        url: titleElement?.href || "",
-        displayUrl: urlElement?.textContent || "",
-        snippet: snippetElement?.textContent || "",
-        date: dateElement?.textContent || "",
-        metadata: metadata,
-      });
-    });
-
-    return results;
-  }
-
-  async function fetchFullContent(searchResults, maxPages = 5) {
-    const enrichedResults = [];
-
-    // Only process a limited number of results to avoid excessive requests
-    for (let i = 0; i < Math.min(searchResults.length, maxPages); i++) {
-      const result = searchResults[i];
-
-      try {
-        const response = await fetch(result.url);
-        if (!response.ok) continue;
-
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-
-        // Extract main content (this is a simplified approach)
-        // For better results, consider using a content extraction library
-        const contentElements = doc.querySelectorAll(
-          "p, h1, h2, h3, h4, h5, h6"
-        );
-        let fullContent = "";
-
-        contentElements.forEach((el) => {
-          const text = el.textContent.trim();
-          if (text.length > 20) {
-            // Simple filter to avoid menu items, etc.
-            fullContent += text + "\n\n";
-          }
-        });
-
-        enrichedResults.push({
-          ...result,
-          fullContent: fullContent.substring(0, 5000), // Limit content length
-        });
-      } catch (error) {
-        console.error(`Error fetching content from ${result.url}:`, error);
-        enrichedResults.push(result); // Keep the original result without full content
-      }
-
-      // Add a delay to avoid triggering rate limits
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-
-    return enrichedResults;
-  }
-
-  async function fetchGoogleSearchContext(query) {
-    const response = await fetch(
-      `https://serpapi.com/search.json?q=${encodeURIComponent(
-        query
-      )}&api_key=YOUR_API_KEY`
-    );
-    const data = await response.json();
-    return data.organic_results?.map((r) => r.snippet).join("\n") || "";
   }
 
   function toggleTheme() {
@@ -896,7 +782,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateModelOptions(models) {
     // Save current selection
-    const currentSelection = modelSelect.value;
+
+    let currentSelection;
+    console.log(modelSelect.value);
+    if (!initialized) {
+      currentSelection = preferredModel;
+      initialized = true;
+    } else {
+      currentSelection = modelSelect.value;
+      updatePreferredModel(currentSelection);
+    }
 
     // Clear options
     modelSelect.innerHTML = "";
@@ -912,6 +807,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // Try to restore previous selection
     if (models.includes(currentSelection)) {
       modelSelect.value = currentSelection;
+    }
+  }
+
+  function addTimerToMessage(messageId, timeInMs) {
+    const messageDiv = document.getElementById(messageId);
+    if (messageDiv) {
+      // Create timer element
+      const timerElement = document.createElement("div");
+      timerElement.className = "response-timer";
+      timerElement.textContent = `${(timeInMs / 1000).toFixed(2)}s`;
+
+      // Append to message div
+      messageDiv.appendChild(timerElement);
     }
   }
 
@@ -934,44 +842,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return messageId;
   }
 
-  function _escapeHtml(unsafe) {
-    return unsafe
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  function formatMessageWithCodeBlocks(message) {
-    // Regular expression to find multi-line code blocks (with optional language)
-    const codeBlockRegex = /```([a-zA-Z0-9+\-.]+)?\n([\s\S]*?)\n```/g;
-
-    // Regular expression to find inline code
-    const inlineCodeRegex = /`([^`]+)`/g;
-
-    // Process multi-line code blocks first
-    const messageWithCodeBlocks = message.replace(
-      codeBlockRegex,
-      (match, language, code) => {
-        const languageClass = language ? `language-${language}` : "";
-        return `<pre><code class="${languageClass}">${_escapeHtml(
-          code
-        )}</code></pre>`;
-      }
-    );
-
-    // Process inline code
-    const formattedMessage = messageWithCodeBlocks.replace(
-      inlineCodeRegex,
-      (match, code) => {
-        return `<code>${_escapeHtml(code)}</code>`;
-      }
-    );
-
-    return formattedMessage;
-  }
-
   function updateMessage(messageId, type, content) {
     const messageDiv = document.getElementById(messageId);
     if (messageDiv) {
@@ -981,31 +851,5 @@ document.addEventListener("DOMContentLoaded", () => {
       // Auto scroll to bottom
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-  }
-
-  function formatBotResponse(text) {
-    // Process markdown-style code blocks
-    let formattedText = text.replace(
-      /```([\s\S]*?)```/g,
-      function (match, code) {
-        return `<pre><code>${escapeHTML(code)}</code></pre>`;
-      }
-    );
-
-    // Process inline code
-    formattedText = formattedText.replace(/`([^`]+)`/g, function (match, code) {
-      return `<code>${escapeHTML(code)}</code>`;
-    });
-
-    // Convert line breaks to <br>
-    formattedText = formattedText.replace(/\n/g, "<br>");
-
-    return formattedText;
-  }
-
-  function escapeHTML(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
   }
 });

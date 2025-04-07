@@ -38,7 +38,7 @@ By leveraging the power of LLMs, this extension enables users to:
   <img src="src/assets/windows_edit_env.PNG" width="360" height="640">
 - **B**. Click `New` to create a new environment variable.
   <img src="src/assets/add_env.PNG" width="640" height="360">
-- **C**. Set the name of the variable as `OLLAMA_ORIGINS` and set its value to `chrome-extension://`.
+- **C**. Set the name of the variable as `OLLAMA_ORIGINS` and set its value to `chrome-extension://*`.
   <img src="src/assets/var_creation.PNG" width="640" height="360">
 
 ---

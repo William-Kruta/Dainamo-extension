@@ -198,6 +198,7 @@ select {
 }
 
 .message {
+  position: relative;
   max-width: 80%;
   padding: 10px 15px;
   border-radius: 15px;
@@ -261,6 +262,16 @@ select {
 #user-input::placeholder {
   color: var(--system-msg-color);
   opacity: 0.7;
+}
+
+.response-timer {
+  position: absolute;
+  bottom: 5px;
+  right: 10px;
+  font-size: 0.8em;
+  color: #888;
+  opacity: 0.8;
+  font-style: italic;
 }
 
 #send-button {
@@ -346,6 +357,15 @@ select {
   margin-bottom: 10px;
 }
 
+.settings-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Space between elements */
+  align-items: flex-start; /* Keep things left-aligned */
+  padding-top: 10px;
+  font-size: 16px;
+}
+
 /* Input number style for context tokens */
 input[type="number"] {
   width: 100%;
@@ -396,18 +416,167 @@ body.dark-theme #connection-test-result.error {
 body.text-size-small .message .message-content {
   font-size: 0.85rem;
   line-height: 1.3;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 body.text-size-medium .message .message-content {
   font-size: 1rem;
   line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 body.text-size-large .message .message-content {
   font-size: 1.2rem;
   line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
+.message-link {
+  color: #0066cc;
+  text-decoration: underline;
+  word-break: break-all; /* This ensures long URLs break */
+}
+
+/* Optional hover effect for links */
+.message-link:hover {
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+/* Ensure code blocks also handle overflow properly */
+/* Code block container */
+pre {
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 16px 0;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+code {
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+}
+
+body:not(.dark-theme) code {
+  color: #000; /* Set code text to black in light mode */
+}
+
+code.inline {
+  background-color: #f0f0f0;
+  padding: 2px 5px;
+  border-radius: 3px;
+  color: #d63384;
+  font-size: 0.875em;
+}
+
+code.text {
+  color: #ed0e9d;
+}
+
+/* Language-specific tokens */
+.token.comment {
+  color: #6a9955;
+  font-style: italic;
+}
+
+.token.string {
+  color: #ce9178;
+}
+
+.token.number {
+  color: #b5cea8;
+}
+
+.token.keyword {
+  color: #569cd6;
+  font-weight: bold;
+}
+
+.token.function {
+  color: #dcdcaa;
+}
+
+.token.class-name {
+  color: #4ec9b0;
+}
+
+.token.token.operator {
+  color: black;
+}
+.dark-theme .token.operator {
+  color: #d4d4d4;
+}
+
+.token.selector {
+  color: #d7ba7d;
+}
+
+.token.property {
+  color: #9cdcfe;
+}
+
+.token.value {
+  color: #ce9178;
+}
+
+.token.tag {
+  color: #569cd6;
+}
+
+.token.attr-name {
+  color: #9cdcfe;
+}
+
+.token.attr-value {
+  color: #ce9178;
+}
+
+/* Link styling */
+.message-link {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+.message-link:hover {
+  text-decoration: none;
+}
+
+/* Code block language label */
+pre::before {
+  content: attr(data-language);
+  display: block;
+  text-align: right;
+  font-size: 12px;
+  color: #858585;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  pre {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+  }
+
+  code.inline {
+    background-color: #2d2d2d;
+    color: #ff85c0;
+  }
+
+  .message-link {
+    color: #4da6ff;
+  }
+}
 /* Text size selector in settings */
 #text-size {
   padding: 8px;
@@ -552,8 +721,8 @@ body.text-size-large .message .message-content {
 }
 
 .title-icon {
-  width: 42px; /* Adjust size as needed */
-  height: 42px;
+  width: 63px; /* Adjust size as needed */
+  height: 63px;
   vertical-align: middle;
   margin-right: 8px;
 }

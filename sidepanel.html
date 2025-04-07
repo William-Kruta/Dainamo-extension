@@ -10,7 +10,7 @@
       <div class="header">
         <h1>
           <img
-            src="./src/assets/dynamo16.png"
+            src="./src/assets/videos/dynamo.gif"
             alt="Dynamo Icon"
             class="title-icon" />
           D<span class="gradient-ai">ai</span>namo
@@ -134,10 +134,27 @@
             <option value="large">Large</option>
           </select>
         </div>
+
         <button id="save-settings">Save Settings</button>
         <button id="test-connection">Test Connection</button>
         <div id="connection-test-result"></div>
-        <h4>Created by William Kruta</h4>
+        <div class="settings-controls">
+          <a
+            href="https://github.com/William-Kruta/Dainamo-extension?tab=readme-ov-file#getting-started"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="message-link"
+            >Setup Guide</a
+          >
+          <a
+            href="https://ollama.com/search"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="message-link"
+            >More Models</a
+          >
+          <h4>Created by William Kruta</h4>
+        </div>
       </div>
     </div>
 
@@ -156,6 +173,6 @@
       </div>
     </div>
 
-    <script src="sidepanel.js"></script>
+    <script src="sidepanel.js" type="module"></script>
   </body>
 </html>
