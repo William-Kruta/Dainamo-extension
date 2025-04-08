@@ -11,6 +11,9 @@ import {
   formatMessageWithCodeBlocks,
 } from "./src/responses/format-response.js";
 
+// Prompts
+import { getPersonalityPrompt } from "./src/prompts/personalities.js";
+
 import {
   performSearch,
   parseSearchResults,
@@ -36,6 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const themeToggle = document.getElementById("theme-toggle");
   const themeLabel = document.querySelector(".theme-label");
   const textSizeSelect = document.getElementById("text-size");
+  const modelPersonalitySelect = document.getElementById("model-personality");
+  const globalMemorySaved = document.getElementById("global-memory");
   const memoryToggle = document.getElementById("memory-toggle");
   const memoryLabel = document.querySelector(".memory-label");
   const newChatButton = document.getElementById("new-chat");
@@ -141,6 +146,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const textSize = localStorage.getItem("textSize") || "medium";
   textSizeSelect.value = textSize;
   document.body.classList.add(`text-size-${textSize}`);
+
+  // Load model personality preference
+  const modelPersonality = localStorage.getItem("modelPersonality") || "Normal";
+  modelPersonalitySelect.value = modelPersonality;
+
+  // Load global memory.
+  const globalMemory = localStorage.getItem("globalMemory") || "";
+  globalMemorySaved.value = globalMemory;
 
   // Load theme preference
   const darkThemeEnabled = localStorage.getItem("darkTheme") === "true";
@@ -550,6 +563,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let pageContent = null;
     let searchResults = null;
 
+    let personalityPrompt = getPersonalityPrompt(modelPersonalitySelect.value);
+    let globalMemory = globalMemorySaved.value.trim();
+    if (globalMemory && globalMemory.trim() !== "") {
+      personalityPrompt += `Here is your global memory: ${globalMemory.trim()}`;
+    }
+
     try {
       // --- Get Page Content ---
       if (contentAwarenessEnabled && chrome.runtime) {
@@ -626,9 +645,8 @@ document.addEventListener("DOMContentLoaded", () => {
           console.warn("Search failed:", err.message);
         }
       }
-
+      contextEnhancedPrompt += `${personalityPrompt}`;
       console.log(`Context Enhanced Prompt: ${contextEnhancedPrompt}`);
-
       // --- Generate Response ---
       let response;
       if (memoryEnabled && messageHistory.length > 0) {
@@ -707,6 +725,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Save text size
     const selectedTextSize = textSizeSelect.value;
     localStorage.setItem("textSize", selectedTextSize);
+
+    // Save model personality
+    const selectedModelPersonality = modelPersonalitySelect.value;
+    localStorage.setItem("modelPersonality", selectedModelPersonality);
+
+    // Global memory save
+    const currentMemory = globalMemorySaved.value.trim();
+    localStorage.setItem("globalMemory", currentMemory);
 
     // Remove existing text size classes
     document.body.classList.remove(

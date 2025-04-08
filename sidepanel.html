@@ -134,7 +134,31 @@
             <option value="large">Large</option>
           </select>
         </div>
-
+        <div class="form-group">
+          <label for="model-personality">Model Personality:</label>
+          <select id="model-personality">
+            <option value="Normal">Normal</option>
+            <option value="Creative">Creative</option>
+            <option value="Concise">Concise</option>
+            <option value="Explanatory">Explanatory</option>
+            <option value="Formal">Formal</option>
+            <option value="Metaphorical">Metaphorical</option>
+            <option value="Rude">Rude</option>
+            <option value="Sarcastic">Sarcastic</option>
+            <option value="Stock Analyst">Stock Analyst</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="global-memory">Global Memory:</label>
+          <textarea
+            id="global-memory"
+            rows="3"
+            placeholder="Enter model instructions or global memory here"></textarea>
+          <small
+            >Persistent instructions that will be included in every
+            prompt</small
+          >
+        </div>
         <button id="save-settings">Save Settings</button>
         <button id="test-connection">Test Connection</button>
         <div id="connection-test-result"></div>
@@ -151,7 +175,14 @@
             target="_blank"
             rel="noopener noreferrer"
             class="message-link"
-            >More Models</a
+            >Get Models</a
+          >
+          <a
+            href="https://github.com/William-Kruta/Dainamo-extension"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="message-link"
+            >Source Code</a
           >
           <h4>Created by William Kruta</h4>
         </div>
