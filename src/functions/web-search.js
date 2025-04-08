@@ -1,4 +1,5 @@
 export async function performSearch(query) {
+  console.log("Optimized search query:", query);
   const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(
     query
   )}`;

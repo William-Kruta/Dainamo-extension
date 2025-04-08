@@ -117,10 +117,11 @@ export async function optimizeSearchQuery(
   ollamaUrl,
   contextTokens
 ) {
+  const currentDate = new Date();
   try {
-    const prompt = `You are a search expert. Generate an optimized search query based on this user question. Do not include dates unless it's in the original query. 
-  Return ONLY the search query with no explanations or additional text:
-  "${userQuery}"`;
+    const prompt = `You are a search expert. Optimize this users query for better search results. Here is the current date if it is relevant: ${currentDate.toDateString()}
+    Return ONLY the search query with no explanations or additional text:
+    "${userQuery}"`;
 
     const response = await fetch(`${ollamaUrl}/api/generate`, {
       method: "POST",

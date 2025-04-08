@@ -266,7 +266,7 @@ select {
 
 .response-timer {
   position: absolute;
-  bottom: 5px;
+  bottom: 2px;
   right: 10px;
   font-size: 0.8em;
   color: #888;

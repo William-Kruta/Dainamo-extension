@@ -566,17 +566,17 @@ document.addEventListener("DOMContentLoaded", () => {
               }
             );
           });
-
+          const snippetMax = 5000;
           if (pageData?.content) {
             pageContent = pageData.content;
-            const snippet = pageData.content.substring(0, 3000);
+            const snippet = pageData.content.substring(0, snippetMax);
             contextEnhancedPrompt = `
   Based on the following context from the current webpage:
   Title: ${pageData.title}
   URL: ${pageData.url}
   Content:
   ---
-  ${snippet}${snippet.length === 3000 ? "... (truncated)" : ""}
+  ${snippet}${snippet.length >= snippetMax ? "... (truncated)" : ""}
   ---
   User's query: ${userMessage}
   `.trim();
@@ -595,21 +595,28 @@ document.addEventListener("DOMContentLoaded", () => {
           //   userMessage,
           //   selectedModel
           // );
-          let results = await performSearch(userMessage);
+          let results = await optimizeSearchQuery(
+            userMessage,
+            selectedModel,
+            ollamaUrl,
+            contextTokens
+          );
+          results = await performSearch(results);
           //results = await fetchFullContent(results);
-          console.log(`Results1: ${results}`);
           results = parseSearchResults(results);
           results = results
             .map(
               (result) =>
-                `Title: ${result.title}\nURL: ${result.url}\nSnippet: ${result.snippet}`
+                `Title: ${result.title}\nDate: ${result.date}\nURL: ${result.url}\nSnippet: ${result.snippet}`
             )
             .join("\n\n");
 
           //console.log(`Results: ${formattedResults}`);
           if (results) {
+            const currentDate = new Date();
             contextEnhancedPrompt += `
   
+  The current date is ${currentDate.toLocaleDateString()}. Use this to answer questions about current events. Be short, concise.
   Additional information from search results:
   ---
   ${results}
@@ -619,6 +626,8 @@ document.addEventListener("DOMContentLoaded", () => {
           console.warn("Search failed:", err.message);
         }
       }
+
+      console.log(`Context Enhanced Prompt: ${contextEnhancedPrompt}`);
 
       // --- Generate Response ---
       let response;
