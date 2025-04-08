@@ -12,6 +12,7 @@ export async function generateOllamaResponse(
   prompt,
   model,
   contextTokens,
+  temperature,
   ollamaUrl
 ) {
   const response = await fetch(`${ollamaUrl}/api/generate`, {
@@ -24,6 +25,7 @@ export async function generateOllamaResponse(
       prompt: prompt,
       stream: false,
       num_ctx: contextTokens,
+      temperature: parseFloat(temperature),
     }),
   });
 
@@ -48,6 +50,7 @@ export async function generateOllamaResponseWithMemory(
   messages,
   model,
   contextTokens,
+  temperature,
   ollamaUrl
 ) {
   const response = await fetch(`${ollamaUrl}/api/chat`, {
@@ -60,6 +63,7 @@ export async function generateOllamaResponseWithMemory(
       messages: messages,
       stream: false,
       num_ctx: contextTokens,
+      temperature: parseFloat(temperature),
     }),
   });
 

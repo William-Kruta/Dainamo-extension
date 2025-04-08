@@ -19,6 +19,10 @@ import {
   parseSearchResults,
 } from "./src/functions/web-search.js";
 
+// RAG
+//import { initializeFileManager, isRAGEnabled } from "./src/rag/file-manager.js";
+//import { processQueryWithRAG } from "./src/rag/rag-processor.js";
+
 document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements - Existing
   const messagesContainer = document.getElementById("messages");
@@ -36,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
   );
   const ollamaUrlInput = document.getElementById("ollama-url");
   const contextTokensInput = document.getElementById("context-tokens");
+  const temperatureInput = document.getElementById("temperature");
   const themeToggle = document.getElementById("theme-toggle");
   const themeLabel = document.querySelector(".theme-label");
   const textSizeSelect = document.getElementById("text-size");
@@ -56,6 +61,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchLabel = document.querySelector(".search-label");
   const deleteChatButton =
     document.getElementById("delete-chat") || createDeleteChatButton();
+
+  // Initialize File Manager
+  //initializeFileManager();
 
   // Create delete chat button if it doesn't exist
   function createDeleteChatButton() {
@@ -120,9 +128,45 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Add a listener for adding selection to RAG from context menu
+  if (chrome.runtime) {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.action === "addSelectionToRAG") {
+        // Create a file from the selection
+        const fileContent = `
+Source: ${message.source}
+Title: ${message.title}
+Date: ${new Date().toISOString()}
+---
+${message.selection}
+        `.trim();
+
+        // Create a Blob and File object
+        const blob = new Blob([fileContent], { type: "text/plain" });
+        const file = new File([blob], message.filename, { type: "text/plain" });
+
+        // Process the file through the RAG system
+        processFile(file).then((result) => {
+          if (result.success) {
+            addMessageToChat(
+              "system",
+              `Added selected text to knowledge base as '${message.filename}'`
+            );
+          } else {
+            addMessageToChat(
+              "system",
+              `Failed to add selection: ${result.error}`
+            );
+          }
+        });
+      }
+    });
+  }
+
   // State variables
   let ollamaUrl = localStorage.getItem("ollamaUrl") || "http://localhost:11434";
   let contextTokens = parseInt(localStorage.getItem("contextTokens") || "2048");
+  let temperature = parseFloat(localStorage.getItem("temperature") || "0.5");
   let memoryEnabled = localStorage.getItem("memoryEnabled") !== "false"; // Default to true
   let currentChatId =
     localStorage.getItem("currentChatId") || `chat-${Date.now()}`;
@@ -139,6 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize UI states
   ollamaUrlInput.value = ollamaUrl;
   contextTokensInput.value = contextTokens;
+  temperatureInput.value = temperature;
   memoryToggle.checked = memoryEnabled;
   memoryLabel.textContent = "Memory";
 
@@ -655,6 +700,7 @@ document.addEventListener("DOMContentLoaded", () => {
           messageHistory,
           selectedModel,
           contextTokens,
+          temperature,
           ollamaUrl
         );
         messageHistory.push({ role: "assistant", content: response });
@@ -663,6 +709,7 @@ document.addEventListener("DOMContentLoaded", () => {
           contextEnhancedPrompt,
           selectedModel,
           contextTokens,
+          temperature,
           ollamaUrl
         );
         if (memoryEnabled) {
@@ -721,6 +768,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Save context tokens
     contextTokens = parseInt(contextTokensInput.value) || 2048;
     localStorage.setItem("contextTokens", contextTokens);
+
+    // Model Temperature
+    temperature = parseFloat(temperatureInput.value) || 0.5;
+    localStorage.setItem("temperature", temperature);
 
     // Save text size
     const selectedTextSize = textSizeSelect.value;

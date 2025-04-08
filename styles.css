@@ -550,6 +550,31 @@ code.text {
   text-decoration: none;
 }
 
+.message-link-tiny {
+  color: #4da6ff;
+  font-size: 10px;
+  padding-bottom: 11px;
+}
+
+.message-link-tiny:hover {
+  text-decoration: none;
+}
+
+.horizontal-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap; /* prevents overflow on small screens */
+  gap: 8px;
+}
+
+.horizontal-wrap small {
+  font-size: 11px;
+}
+
+.horizontal-wrap input {
+  width: 60px;
+}
+
 /* Code block language label */
 pre::before {
   content: attr(data-language);

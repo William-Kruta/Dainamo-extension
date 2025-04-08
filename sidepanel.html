@@ -122,9 +122,38 @@
             min="512"
             max="32768"
             step="512" />
-          <small
-            >Sets the context window size for the model (default: 2048)</small
-          >
+          <div class="horizontal-wrap">
+            <small
+              >Sets the context window size for the model (default: 2048)</small
+            >
+            <a
+              href="https://www.ibm.com/think/topics/context-window"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="message-link-tiny"
+              >Read More</a
+            >
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="temperature">Model Temperature:</label>
+          <input
+            type="number"
+            id="temperature"
+            value="0.5"
+            min="0"
+            max="1"
+            step="0.01" />
+          <div class="horizontal-wrap">
+            <small>Temperature determines model randomness.</small>
+            <a
+              href="https://www.ibm.com/think/topics/llm-temperature"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="message-link-tiny"
+              >Read More</a
+            >
+          </div>
         </div>
         <div class="form-group">
           <label for="text-size">Text Size:</label>
