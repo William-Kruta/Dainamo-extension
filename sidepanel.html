@@ -42,14 +42,14 @@
             <input type="checkbox" id="memory-toggle" checked />
             <span class="slider round"></span>
           </label>
-          <span class="memory-label">Memory: On</span>
+          <span class="memory-label">Memory</span>
         </div>
         <div class="content-awareness-toggle">
           <label class="switch">
             <input type="checkbox" id="content-awareness-toggle" unchecked />
             <span class="slider round"></span>
           </label>
-          <span class="content-awareness-label">Context: On</span>
+          <span class="content-awareness-label">Context</span>
         </div>
         <div class="search-toggle">
           <label class="switch">
@@ -76,10 +76,31 @@
       </div>
 
       <div class="input-container">
-        <textarea
-          id="user-input"
-          placeholder="Ask Anything"
-          rows="3"></textarea>
+        <div class="input-actions">
+          <button id="plus-button" class="icon-button">+</button>
+          <div id="plus-menu" class="plus-menu">
+            <div class="menu-item" id="upload-file-option">
+              <span class="menu-icon">📁</span>
+              Upload File
+            </div>
+            <div class="menu-item" id="insert-template-option">
+              <span class="menu-icon">📝</span>
+              Insert Template
+            </div>
+            <div class="menu-item" id="add-code-option">
+              <span class="menu-icon">💻</span>
+              Add Code Block
+            </div>
+          </div>
+        </div>
+        <div class="input-wrapper">
+          <div id="text-area-overlay" class="text-area-overlay"></div>
+          <!-- File badges go here -->
+          <textarea
+            id="user-input"
+            placeholder="Ask Anything"
+            rows="3"></textarea>
+        </div>
         <button id="send-button">Send</button>
       </div>
 
@@ -104,7 +125,7 @@
         <span id="connection-settings">⚙️</span>
       </div>
     </div>
-
+    <!--------------------------------------------- Settings modal --------------------------------------------->
     <div id="settings-modal" class="modal">
       <div class="modal-content">
         <span class="close-modal">&times;</span>
@@ -187,6 +208,23 @@
             >Persistent instructions that will be included in every
             prompt</small
           >
+          <div class="form-group">
+            <label for="provider-select">Provider:</label>
+            <select id="provider-select">
+              <option value="ollama">Ollama</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="google">Google</option>
+              <option value="openai">OpenAI</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="api-key-group" style="display: none">
+            <label for="api-key-input">API Key:</label>
+            <input
+              type="password"
+              id="api-key-input"
+              placeholder="Enter API key" />
+          </div>
         </div>
         <button id="save-settings">Save Settings</button>
         <button id="test-connection">Test Connection</button>
@@ -232,7 +270,7 @@
         <button id="confirm-save">Save</button>
       </div>
     </div>
-
+    <script src="src/utils/encrypt.js" type="module"></script>
     <script src="sidepanel.js" type="module"></script>
   </body>
 </html>

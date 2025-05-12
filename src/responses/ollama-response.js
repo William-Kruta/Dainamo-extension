@@ -35,7 +35,16 @@ export async function generateOllamaResponse(
   }
 
   const data = await response.json();
-  return data.response;
+  console.log(`DATAAA: ${JSON.stringify(data, null, 2)}`);
+  const content = data.response;
+  const tokens = data.eval_count / (data.eval_duration / 1_000_000_000);
+
+  const payload = {
+    content: content,
+    tokens: tokens.toFixed(2),
+  };
+  console.log(`PAYLOAD: ${JSON.stringify(payload, null, 2)}`);
+  return payload;
 }
 
 /**
@@ -73,7 +82,18 @@ export async function generateOllamaResponseWithMemory(
   }
 
   const data = await response.json();
-  return data.message.content;
+  console.log(`DATA: ${JSON.stringify(data, null, 2)}`);
+
+  const content = data.message.content;
+  const tokens = data.eval_count / (data.eval_duration / 1_000_000_000);
+
+  const payload = {
+    content: content,
+    tokens: tokens.toFixed(2),
+  };
+
+  console.log(`JSON: ${JSON.stringify(payload, null, 2)}`);
+  return payload;
 }
 
 /**

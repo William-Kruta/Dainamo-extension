@@ -8,29 +8,25 @@ import {
 } from "../utils/syntax-highlight.js";
 
 export function formatBotResponse(text) {
+  console.log(`Text: ${text}`);
+  const reasoningMatch = text.match(/<think>([\s\S]*?)<\/think>/);
+  const reasoning = reasoningMatch ? reasoningMatch[1].trim() : "";
+  const response = text.replace(/<think>[\s\S]*?<\/think>/, "").trim();
+  let data = {
+    reasoning,
+    response,
+  };
   // First, detect and convert URLs to clickable links
   const urlRegex = /(https?:\/\/[^\s]+)/g;
-  let formattedText = text.replace(urlRegex, function (url) {
+  data["response"] = data["response"].replace(urlRegex, function (url) {
     return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="message-link">${url}</a>`;
   });
 
-  // Process markdown-style code blocks
-  formattedText = formattedText.replace(
-    /```([\s\S]*?)```/g,
-    function (match, code) {
-      return `<pre><code>${escapeHTML(code)}</code></pre>`;
-    }
-  );
-
-  // Process inline code
-  formattedText = formattedText.replace(/`([^`]+)`/g, function (match, code) {
-    return `<code>${escapeHTML(code)}</code>`;
-  });
-
   // Convert line breaks to <br>
-  formattedText = formattedText.replace(/\n/g, "<br>");
+  //formattedText = formattedText.replace(/\n/g, "<br>");
+  console.log(JSON.stringify(data, null, 2));
 
-  return formattedText;
+  return data;
 }
 
 export function formatMessageWithCodeBlocks(message) {

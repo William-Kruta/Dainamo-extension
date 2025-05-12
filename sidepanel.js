@@ -11,6 +11,9 @@ import {
   formatMessageWithCodeBlocks,
 } from "./src/responses/format-response.js";
 
+// Encryption
+import { decryptApiKey, encryptAndStoreApiKey } from "./src/utils/encrypt.js";
+
 // Prompts
 import { getPersonalityPrompt } from "./src/prompts/personalities.js";
 
@@ -23,10 +26,12 @@ import {
 //import { initializeFileManager, isRAGEnabled } from "./src/rag/file-manager.js";
 //import { processQueryWithRAG } from "./src/rag/rag-processor.js";
 
+// Utils
+import { createDeleteChatButton } from "./src/utils/create-buttons.js";
+
 document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements - Existing
   const messagesContainer = document.getElementById("messages");
-  const userInput = document.getElementById("user-input");
   const sendButton = document.getElementById("send-button");
   const modelSelect = document.getElementById("model-select");
   const statusIndicator = document.getElementById("status-indicator");
@@ -41,46 +46,91 @@ document.addEventListener("DOMContentLoaded", () => {
   const ollamaUrlInput = document.getElementById("ollama-url");
   const contextTokensInput = document.getElementById("context-tokens");
   const temperatureInput = document.getElementById("temperature");
+  // Theme elements
   const themeToggle = document.getElementById("theme-toggle");
   const themeLabel = document.querySelector(".theme-label");
+  // Text Size
   const textSizeSelect = document.getElementById("text-size");
+  // Personality & Global Memory Elements
   const modelPersonalitySelect = document.getElementById("model-personality");
   const globalMemorySaved = document.getElementById("global-memory");
+  // Model Providers
+  const providerSelect = document.getElementById("provider-select");
+  const apiKeyGroup = document.getElementById("api-key-group");
+  const apiKeyInput = document.getElementById("api-key-input");
+  const modelGroup = document.getElementById("model-group");
+
+  // Memory Elements
   const memoryToggle = document.getElementById("memory-toggle");
   const memoryLabel = document.querySelector(".memory-label");
+  // New Chat & Save
   const newChatButton = document.getElementById("new-chat");
   const saveChatButton = document.getElementById("save-chat");
   const chatHistorySelect = document.getElementById("chat-history");
   const saveChatModal = document.getElementById("save-chat-modal");
   const closeSaveModal = document.querySelector(".close-save-modal");
+  // Chat Name & Save Elements
   const chatNameInput = document.getElementById("chat-name");
   const confirmSaveButton = document.getElementById("confirm-save");
+  // Page Context Elements
   const pageContextToggle = document.getElementById("content-awareness-toggle");
   const pageContextLabel = document.querySelector(".content-awareness-label");
+  // Web Search Elements
   const searchToggle = document.getElementById("search-toggle");
   const searchLabel = document.querySelector(".search-label");
   const deleteChatButton =
-    document.getElementById("delete-chat") || createDeleteChatButton();
+    document.getElementById("delete-chat") ||
+    createDeleteChatButton(document, chatHistorySelect);
+
+  // Plus Buttons
+  const plusButton = document.getElementById("plus-button");
+  const plusMenu = document.getElementById("plus-menu");
+  const uploadFileOption = document.getElementById("upload-file-option");
+  const insertTemplateOption = document.getElementById(
+    "insert-template-option"
+  );
+  const addCodeOption = document.getElementById("add-code-option");
+  const fileUploadInput = document.getElementById("file-upload");
+  const userInput = document.getElementById("user-input");
+
+  // Toggle the plus menu
+  plusButton.addEventListener("click", function (event) {
+    event.stopPropagation();
+    plusMenu.classList.toggle("active");
+  });
+
+  // Close the plus menu when clicking elsewhere
+  document.addEventListener("click", function (event) {
+    if (!plusMenu.contains(event.target) && event.target !== plusButton) {
+      plusMenu.classList.remove("active");
+    }
+  });
+
+  // Upload file option - triggers the hidden file input
+  uploadFileOption.addEventListener("click", function () {
+    fileUploadInput.click();
+    plusMenu.classList.remove("active");
+  });
+
+  // Insert template option
+  insertTemplateOption.addEventListener("click", function () {
+    // Insert a template at cursor position
+    const template =
+      "Hello, I need help with [topic]. Can you provide information about [specific question]?";
+    insertTextAtCursor(userInput, template);
+    plusMenu.classList.remove("active");
+  });
+
+  // Add code block option
+  addCodeOption.addEventListener("click", function () {
+    // Insert code block template at cursor position
+    const codeBlock = "```\n// Your code here\n```";
+    insertTextAtCursor(userInput, codeBlock);
+    plusMenu.classList.remove("active");
+  });
 
   // Initialize File Manager
   //initializeFileManager();
-
-  // Create delete chat button if it doesn't exist
-  function createDeleteChatButton() {
-    const deleteButton = document.createElement("button");
-    deleteButton.id = "delete-chat";
-    deleteButton.className = "action-button delete-btn";
-    deleteButton.innerHTML = "Delete Chat";
-    deleteButton.title = "Delete the selected chat";
-
-    // Insert the delete button after the chat history select dropdown
-    chatHistorySelect.parentNode.insertBefore(
-      deleteButton,
-      chatHistorySelect.previousSibling
-    );
-
-    return deleteButton;
-  }
 
   // Add to state variables
   let contentAwarenessEnabled = false;
@@ -200,6 +250,21 @@ ${message.selection}
   const globalMemory = localStorage.getItem("globalMemory") || "";
   globalMemorySaved.value = globalMemory;
 
+  // on load, restore saved provider
+  const savedProvider = localStorage.getItem("provider") || "ollama";
+  providerSelect.value = savedProvider;
+  toggleApiKeyField(savedProvider);
+  populateModelSelect(savedProvider);
+  if (savedModel) modelSelect.value = savedModel;
+
+  providerSelect.addEventListener("change", async (e) => {
+    const p = e.target.value;
+    localStorage.setItem("provider", p);
+
+    toggleApiKeyField(p);
+    await populateModelSelect(p);
+  });
+
   // Load theme preference
   const darkThemeEnabled = localStorage.getItem("darkTheme") === "true";
   if (darkThemeEnabled) {
@@ -222,7 +287,6 @@ ${message.selection}
   userInput.addEventListener("keydown", handleEnterKey);
   connectionSettings.addEventListener("click", openSettingsModal);
   closeModal.addEventListener("click", closeSettingsModal);
-  saveSettings.addEventListener("click", saveAndCloseSettings);
   testConnection.addEventListener("click", testConnectionHandler);
   memoryToggle.addEventListener("change", toggleMemory);
   newChatButton.addEventListener("click", startNewChat);
@@ -236,6 +300,29 @@ ${message.selection}
     searchLabel.textContent = `Search`;
   });
   modelSelect.addEventListener("change", saveSelectedModel);
+
+  providerSelect.addEventListener("change", (e) => {
+    const p = e.target.value;
+    localStorage.setItem("provider", p);
+    toggleApiKeyField(p);
+  });
+
+  saveSettings.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const provider = providerSelect.value;
+    // encrypt & store key if needed…
+    if (provider !== "ollama") {
+      const rawKey = apiKeyInput.value.trim();
+      if (rawKey) await encryptAndStoreApiKey(provider, rawKey);
+    }
+
+    // store chosen model
+    localStorage.setItem("model", modelSelect.value);
+
+    // call your original save & close
+    saveAndCloseSettings();
+  });
 
   // New Event Listener for Delete Chat Button
   deleteChatButton.addEventListener("click", deleteSelectedChat);
@@ -252,6 +339,28 @@ ${message.selection}
 
   // Check connection on load
   checkOllamaConnection();
+
+  // Helper function to insert text at cursor position in textarea
+  function insertTextAtCursor(textarea, text) {
+    const startPos = textarea.selectionStart;
+    const endPos = textarea.selectionEnd;
+    const scrollTop = textarea.scrollTop;
+
+    const beforeText = textarea.value.substring(0, startPos);
+    const afterText = textarea.value.substring(endPos);
+
+    textarea.value = beforeText + text + afterText;
+
+    // Move cursor position after the inserted text
+    textarea.selectionStart = startPos + text.length;
+    textarea.selectionEnd = startPos + text.length;
+
+    // Restore scroll position
+    textarea.scrollTop = scrollTop;
+
+    // Focus on the textarea
+    textarea.focus();
+  }
 
   // Function to delete the selected chat
   function deleteSelectedChat() {
@@ -322,10 +431,33 @@ ${message.selection}
     }
   }
 
+  function displayUploadedFile(file) {
+    const inputContainer = document.getElementById("text-area-overlay");
+
+    const fileBadge = document.createElement("div");
+    fileBadge.className = "file-badge";
+    fileBadge.textContent = file.name;
+
+    // Create the "X" icon
+    const deleteIcon = document.createElement("span");
+    deleteIcon.className = "delete-icon";
+    deleteIcon.textContent = "✖";
+
+    // Attach click event to delete the file badge
+    deleteIcon.addEventListener("click", function () {
+      inputContainer.removeChild(fileBadge);
+    });
+
+    // Append the "X" icon to the file badge
+    fileBadge.appendChild(deleteIcon);
+
+    inputContainer.appendChild(fileBadge);
+  }
+
   // Functions - Chat Management
   function toggleMemory() {
     memoryEnabled = memoryToggle.checked;
-    memoryLabel.textContent = memoryEnabled ? "Memory: On" : "Memory: Off";
+    memoryLabel.textContent = "Memory";
     localStorage.setItem("memoryEnabled", memoryEnabled);
 
     // Reset message history when turning memory off
@@ -334,6 +466,27 @@ ${message.selection}
     } else {
       // If enabling memory, populate history with current messages
       messageHistory = getAllMessagesForHistory();
+    }
+  }
+
+  async function toggleApiKeyField(provider) {
+    if (provider === "ollama") {
+      apiKeyGroup.style.display = "none";
+      return;
+    }
+
+    apiKeyGroup.style.display = "block";
+    const stored = localStorage.getItem(`${provider}ApiKey`);
+    if (!stored) {
+      // first time for this provider: ask user
+      const rawKey = prompt(`Enter API key for ${provider}:`);
+      if (rawKey) {
+        await encryptAndStoreApiKey(provider, rawKey);
+        apiKeyInput.value = rawKey;
+      }
+    } else {
+      // decrypt & populate
+      apiKeyInput.value = await decryptApiKey(provider);
     }
   }
 
@@ -703,7 +856,10 @@ ${message.selection}
           temperature,
           ollamaUrl
         );
-        messageHistory.push({ role: "assistant", content: response });
+        messageHistory.push({
+          role: "assistant",
+          content: response.content,
+        });
       } else {
         response = await generateOllamaResponse(
           contextEnhancedPrompt,
@@ -712,18 +868,39 @@ ${message.selection}
           temperature,
           ollamaUrl
         );
+
         if (memoryEnabled) {
           messageHistory = [
             { role: "user", content: contextEnhancedPrompt },
-            { role: "assistant", content: response },
+            { role: "assistant", content: response.content },
           ];
         }
       }
       // End the timer
       const endTime = performance.now();
       const responseTime = endTime - startTime;
-      updateMessage(thinkingId, "bot", formatBotResponse(response));
+      const botResponse = formatBotResponse(response.content);
+
+      if (botResponse.reasoning != "") {
+        const combinedContent = `
+      <div class="response-text">
+        ${botResponse.response}
+      </div>
+      <details class="reasoning-details">
+        <summary>Show reasoning</summary>
+        <div class="reasoning-text">
+          ${botResponse.reasoning}
+        </div>
+      </details>
+    `;
+
+        updateMessage(thinkingId, "bot", combinedContent);
+      } else {
+        updateMessage(thinkingId, "bot", botResponse.response);
+      }
+
       addTimerToMessage(thinkingId, responseTime);
+      addTokensToMessage(thinkingId, response.tokens);
     } catch (error) {
       updateMessage(
         thinkingId,
@@ -866,6 +1043,39 @@ ${message.selection}
     }
   }
 
+  async function populateModelSelect(provider) {
+    modelSelect.innerHTML = ""; // clear old options
+    modelGroup.style.display = "block"; // make it visible
+
+    let models = [];
+    switch (provider) {
+      case "ollama":
+        models = await fetchLocalModels();
+        break;
+      case "google":
+        models = ["Gemini 2.5", "Gemini Ultra", "Gemini Pro"];
+        break;
+      case "anthropic":
+        models = ["Claude-2", "Claude-3", "Claude Instant"];
+        break;
+      case "openai":
+        models = ["gpt-4", "gpt-3.5-turbo"];
+        break;
+    }
+
+    models.forEach((m) => {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = m;
+      modelSelect.appendChild(opt);
+    });
+
+    // if no models found, you might hide the group
+    if (models.length === 0) {
+      modelGroup.style.display = "none";
+    }
+  }
+
   function updateModelOptions(models) {
     // Save current selection
 
@@ -907,6 +1117,19 @@ ${message.selection}
       // Append to message div
       messageDiv.appendChild(timerElement);
     }
+  }
+
+  function addTokensToMessage(messageId, tokenCount) {
+    const messageDiv = document.getElementById(messageId);
+    if (!messageDiv) return;
+
+    // Create tokens element
+    const tokenElement = document.createElement("div");
+    tokenElement.className = "response-tokens";
+    tokenElement.textContent = `${tokenCount} token/s`;
+
+    // Append it under the message
+    messageDiv.appendChild(tokenElement);
   }
 
   function addMessageToChat(type, content) {

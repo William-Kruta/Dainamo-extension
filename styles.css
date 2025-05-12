@@ -117,15 +117,25 @@ button {
   background-color: var(--primary-color);
   color: white;
   border: none;
-  padding: 10px 15px;
-  border-radius: 4px;
+  padding: 12px 20px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
+  font-size: 16px;
+  transition: background-color 0.3s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  outline: none;
 }
 
 button:hover {
   background-color: var(--primary-hover);
+  transform: translateY(-2px); /* Slight lift on hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Increased shadow on hover */
+}
+
+button:active {
+  transform: translateY(0); /* No lift when active */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); /* Reduced shadow when active */
 }
 
 /* Side panel styles */
@@ -239,15 +249,101 @@ select {
   font-family: monospace;
 }
 
-/* Input container */
+/* Input container with plus button */
 .input-container {
   display: flex;
   padding: 15px;
   border-top: 1px solid var(--border-color);
   gap: 10px;
   background-color: var(--bg-color);
+  position: relative; /* Added for positioning the dropdown */
 }
 
+.input-actions {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.icon-button {
+  background-color: transparent;
+  color: var(--primary-color);
+  font-size: 20px;
+  font-weight: bold;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.icon-button:hover {
+  background-color: rgba(66, 133, 244, 0.1);
+}
+
+.icon-button:active {
+  transform: scale(0.95);
+}
+
+/* Plus menu dropdown */
+.plus-menu {
+  position: absolute;
+  bottom: 45px;
+  left: 0;
+  width: 180px;
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: none;
+  z-index: 10;
+}
+
+.plus-menu.active {
+  display: block;
+}
+
+.menu-item {
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+  background-color: rgba(66, 133, 244, 0.1);
+}
+
+.menu-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+/* Dark mode adjustments */
+body.dark-theme .icon-button {
+  color: var(--primary-color);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .icon-button:hover {
+  background-color: rgba(92, 154, 255, 0.1);
+}
+
+body.dark-theme .menu-item:hover {
+  background-color: rgba(92, 154, 255, 0.1);
+}
+
+body.dark-theme .plus-menu {
+  background-color: var(--bg-color);
+  border-color: var(--border-color);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
 #user-input {
   flex: 1;
   padding: 10px;
@@ -264,7 +360,8 @@ select {
   opacity: 0.7;
 }
 
-.response-timer {
+.response-timer,
+.response-tokens {
   position: absolute;
   bottom: 2px;
   right: 10px;
@@ -274,8 +371,25 @@ select {
   font-style: italic;
 }
 
+.response-tokens {
+  right: 60px; /* Pad right */
+}
+
+/* .response-tokens {
+  font-size: 0.8em;
+  color: #888;
+  opac
+  margin-top: 4px;
+} */
+
 #send-button {
   align-self: flex-end;
+  background-color: var(--primary-color); /* Green color for send button */
+  color: white;
+}
+
+#send-button:hover {
+  background-color: #43a047; /* Darker green on hover */
 }
 
 /* Status bar */
@@ -437,18 +551,6 @@ body.text-size-large .message .message-content {
   max-width: 100%;
 }
 
-.message-link {
-  color: #0066cc;
-  text-decoration: underline;
-  word-break: break-all; /* This ensures long URLs break */
-}
-
-/* Optional hover effect for links */
-.message-link:hover {
-  text-decoration: none;
-  opacity: 0.8;
-}
-
 /* Ensure code blocks also handle overflow properly */
 /* Code block container */
 pre {
@@ -482,7 +584,8 @@ code.text {
   color: #ed0e9d;
 }
 
-/* Language-specific tokens */
+/* --------------------------------------------------------- Coding Tokens */
+
 .token.comment {
   color: #6a9955;
   font-style: italic;
@@ -540,14 +643,20 @@ code.text {
   color: #ce9178;
 }
 
+/* --------------------------------------------------------- Message Links */
+
 /* Link styling */
+
 .message-link {
   color: #0066cc;
   text-decoration: underline;
+  word-break: break-all; /* This ensures long URLs break */
 }
 
+/* Optional hover effect for links */
 .message-link:hover {
   text-decoration: none;
+  opacity: 0.8;
 }
 
 .message-link-tiny {
@@ -559,6 +668,38 @@ code.text {
 .message-link-tiny:hover {
   text-decoration: none;
 }
+
+/* --------------------------------------------------------- Reasoning */
+.reasoning-details {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 0.9em;
+  color: var(--bot-msg-color);
+}
+
+.reasoning-details summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.reasoning-details summary:hover {
+  color: var(--accent-hover);
+}
+
+.reasoning-details summary::-webkit-details-marker {
+  font-size: 1.1em;
+}
+
+.reasoning-text {
+  margin-top: 6px;
+  padding: 10px 10px;
+  background-color: var(--code-bg);
+  border-radius: 6px;
+  white-space: pre-wrap; /* preserve line breaks */
+}
+
+/* --------------------------------------------------------- Horizontal Wrap */
 
 .horizontal-wrap {
   display: flex;
@@ -586,6 +727,7 @@ pre::before {
   text-transform: uppercase;
 }
 
+/* --------------------------------------------------------- Dark Mode Support */
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   pre {
@@ -632,34 +774,99 @@ pre::before {
   gap: 10px;
 }
 
-.memory-toggle {
-  display: flex;
-  align-items: center;
+/* --------------------------------------------------------- Toggles */
+/* Toggles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px; /* Increased width */
+  height: 24px; /* Increased height */
 }
 
-.memory-toggle,
-.content-awareness-toggle {
-  display: flex;
-  align-items: center;
-}
-.memory-label {
-  margin-left: 8px;
-  font-size: 14px;
-  color: var(--text-color);
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 24px; /* Make it pill-shaped */
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px; /* Adjusted size */
+  width: 20px; /* Adjusted size */
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%; /* Make it round */
+}
+
+input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px); /* Adjusted translate */
+}
+
+/* Adjustments for dark mode */
+body.dark-theme .slider {
+  background-color: #444; /* Darker background */
+}
+
+body.dark-theme .slider:before {
+  background-color: #eee; /* Lighter handle */
+}
+
+input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+/* Adjustments for dark mode */
+body.dark-theme input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+/* Content awareness toggle */
 .memory-toggle,
+.content-awareness-toggle,
 .search-toggle {
-  display: flex;
-  align-items: center;
+  flex-basis: auto; /* Allow items to size themselves */
+  width: auto; /* Ensure width is not constrained */
+  margin-bottom: 0; /* Remove bottom margin */
 }
 
+.memory-label,
+.content-awareness-label,
 .search-label {
   margin-left: 8px;
   font-size: 14px;
   color: var(--text-color);
 }
 
+/* Memory, Content Awareness, and Search Toggle Labels */
+.memory-label,
+.content-awareness-label,
+.search-label {
+  margin-left: 8px;
+  font-size: 14px;
+  color: var(--text-color);
+  user-select: none; /* Prevent text selection */
+}
+
+/* --------------------------------------------------------- Chat Actions */
 .chat-actions {
   display: flex;
   gap: 8px;
@@ -677,7 +884,8 @@ pre::before {
 }
 
 #new-chat,
-#save-chat {
+#save-chat,
+#delete-chat {
   padding: 5px 10px;
   font-size: 12px;
 }
@@ -701,17 +909,11 @@ pre::before {
   color: var(--text-color);
 }
 
+/* --------------------------------------------------------- Mobile Support */
 /* Mobile responsiveness */
 @media (max-width: 600px) {
-  /* .chat-management {
-    flex-direction: column;
-    gap: 10px;
-    align-items: flex-start;
-  } */
-
   .chat-management {
     display: flex;
-    /* justify-content: space-between; This is what's pushing the toggles apart */
     align-items: center;
     padding: 10px 15px;
     border-bottom: 1px solid var(--border-color);
@@ -735,7 +937,6 @@ pre::before {
 @media (max-width: 768px) {
   .chat-management {
     display: flex;
-    /* justify-content: space-between; This is what's pushing the toggles apart */
     align-items: center;
     padding: 10px 15px;
     border-bottom: 1px solid var(--border-color);
@@ -745,13 +946,16 @@ pre::before {
   }
 
   .memory-toggle,
-  .content-awareness-toggle {
-    flex-basis: 48%;
+  .content-awareness-toggle,
+  .search-toggle {
+    flex-basis: calc(50% - 8px); /* Two items per row with gap */
+    width: auto; /* Reset width */
+    margin-bottom: 5px;
   }
 
   .chat-actions {
-    flex-basis: 100%;
-    justify-content: space-between;
+    flex-basis: auto;
+    margin-left: auto; /* Push actions to the right */
   }
 }
 
@@ -795,19 +999,6 @@ body.dark-theme .page-context-badge {
   background-color: rgba(92, 154, 255, 0.1);
 }
 
-/* Content awareness toggle */
-.content-awareness-toggle {
-  display: flex;
-  align-items: center;
-  margin-right: 10px;
-}
-
-.content-awareness-label {
-  margin-left: 8px;
-  font-size: 14px;
-  color: var(--text-color);
-}
-
 #save-chat {
   padding: 5px 10px;
   font-size: 12px;
@@ -815,20 +1006,12 @@ body.dark-theme .page-context-badge {
 
 /* Delete Chat Button Styles */
 .delete-btn {
-  background-color: #ff4444;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 5px 10px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background-color 0.3s ease;
-  display: inline-flex;
-  align-items: center;
+  background-color: #e53935; /* A shade of red */
 }
 
+/* Delete Chat Button Styles - hover overrides for specific styling */
 .delete-btn:hover {
-  background-color: #cc0000;
+  background-color: #d32f2f; /* Darker shade of red on hover */
 }
 
 .delete-btn:disabled {
@@ -848,4 +1031,249 @@ body.dark-theme .page-context-badge {
 .dark-theme .delete-btn:disabled {
   background-color: #784242;
   color: #cccccc;
+}
+
+/* File Management Section */
+.sidebar-section {
+  padding: 10px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.file-upload-area {
+  margin: 10px 0;
+}
+
+.file-upload-button {
+  display: inline-block;
+  padding: 8px 15px;
+  background-color: #2c7be5;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.file-upload-button:hover {
+  background-color: #1a68d1;
+}
+
+.file-status {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #666;
+  min-height: 20px;
+}
+
+/* Files List */
+.files-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.files-list {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+  background-color: #f9f9f9;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+}
+
+.file-item:last-child {
+  border-bottom: none;
+}
+
+.file-info {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-name {
+  font-weight: 500;
+}
+
+.file-type {
+  color: #777;
+  font-size: 11px;
+  margin-left: 5px;
+}
+
+.file-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.file-action-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 14px;
+  padding: 2px;
+}
+
+.file-action-button:hover {
+  color: #e74c3c;
+}
+
+.empty-files-message {
+  color: #999;
+  text-align: center;
+  padding: 10px;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* RAG Options */
+.rag-options {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-label {
+  margin-left: 5px;
+  font-size: 14px;
+}
+
+.rag-status {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #666;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.status-dot.enabled {
+  background-color: #2ecc71;
+}
+
+.status-dot.disabled {
+  background-color: #95a5a6;
+}
+
+/* Small button */
+.small-button {
+  padding: 3px 8px;
+  font-size: 12px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.small-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Dark theme adjustments */
+.dark-theme .files-list {
+  background-color: #2a2a2a;
+  border-color: #444;
+}
+
+.dark-theme .file-item {
+  border-bottom-color: #444;
+}
+
+.dark-theme .small-button {
+  background-color: #444;
+  border-color: #555;
+  color: #eee;
+}
+
+.dark-theme .small-button:hover {
+  background-color: #555;
+}
+
+.dark-theme .empty-files-message {
+  color: #888;
+}
+
+.file-badge {
+  background-color: #e0f0ff;
+  color: #005f99;
+  border-radius: 12px;
+  padding: 4px 10px;
+  margin: 5px 5px 0 0;
+  display: inline-block;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+.input-wrapper {
+  display: flex;
+  position: relative;
+  width: 100%;
+}
+
+.text-area-overlay {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  right: 8px;
+  bottom: 6px;
+  pointer-events: none; /* allows clicks to go through to textarea */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-content: flex-start;
+  z-index: 1;
+}
+
+/* #user-input {
+  position: relative;
+  z-index: 2;
+  background-color: transparent;
+  padding-top: 24px; /* make space for badges at the top */
+.file-badge {
+  position: absolute;
+  bottom: 10px; /* Adjust as needed */
+  right: 10px; /* Adjust as needed */
+  background-color: #f0f0f0; /* Optional, to give the badge a background */
+  padding: 5px 10px; /* Optional, adjust padding to your liking */
+  border-radius: 5px; /* Optional, makes the badge rounded */
+  font-size: 12px; /* Adjust text size if needed */
+  color: #333; /* Optional, adjust text color */
+}
+
+.delete-icon {
+  cursor: pointer;
+  margin-left: 10px;
+  font-size: 16px; /* Adjust the size of the "X" */
+  color: #ff0000; /* Red color for the "X" */
+  transition: color 0.3s;
+}
+
+.delete-icon:hover {
+  color: #cc0000; /* Darker red on hover */
 }
