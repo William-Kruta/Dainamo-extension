@@ -210,21 +210,24 @@ select {
 .message {
   position: relative;
   max-width: 80%;
-  padding: 10px 15px;
+  padding: 10px 15px 0;
   border-radius: 15px;
   line-height: 1.4;
+  min-height: 3em;
 }
 
 .message.user {
   align-self: flex-end;
   background-color: var(--user-msg-bg);
   color: var(--user-msg-color);
+  padding-bottom: 3px;
 }
 
 .message.bot {
   align-self: flex-start;
   background-color: var(--bot-msg-bg);
   color: var(--bot-msg-color);
+  padding-bottom: 15px;
 }
 
 .message.system {
@@ -365,12 +368,25 @@ body.dark-theme .plus-menu {
   position: absolute;
   bottom: 2px;
   right: 10px;
-  font-size: 0.8em;
+  font-size: 0.95em;
+  color: #888;
+  opacity: 0.8;
+  font-style: italic;
+}
+.response-name {
+  position: absolute;
+  bottom: 2px;
+  left: 10px;
+  right: auto;
+  font-size: 0.95em;
   color: #888;
   opacity: 0.8;
   font-style: italic;
 }
 
+.response-timer {
+  right: 15px;
+}
 .response-tokens {
   right: 60px; /* Pad right */
 }

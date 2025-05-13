@@ -1,22 +1,21 @@
+// Ollama response
 import {
   generateOllamaResponse,
   generateOllamaResponseWithMemory,
   testOllamaConnection,
   optimizeSearchQuery,
-  fetchLocalModels,
-} from "./src/providers/ollama.js";
-
+} from "./src/responses/ollama-response.js";
 // Response Formatting
 import {
   formatBotResponse,
   formatMessageWithCodeBlocks,
-} from "./src/utils/format-response.js";
+} from "./src/responses/format-response.js";
 
 // Encryption
 import { decryptApiKey, encryptAndStoreApiKey } from "./src/utils/encrypt.js";
 
 // Prompts
-import { getPersonalityPrompt } from "./src/utils/personalities.js";
+import { getPersonalityPrompt } from "./src/prompts/personalities.js";
 
 import {
   performSearch,
@@ -45,7 +44,6 @@ document.addEventListener("DOMContentLoaded", () => {
     "connection-test-result"
   );
   const ollamaUrlInput = document.getElementById("ollama-url");
-  const deviceNumberInput = document.getElementById("device-number");
   const contextTokensInput = document.getElementById("context-tokens");
   const temperatureInput = document.getElementById("temperature");
   // Theme elements
@@ -903,7 +901,6 @@ ${message.selection}
 
       addTimerToMessage(thinkingId, responseTime);
       addTokensToMessage(thinkingId, response.tokens);
-      addNameToMessage(thinkingId, selectedModel);
     } catch (error) {
       updateMessage(
         thinkingId,
@@ -1048,7 +1045,7 @@ ${message.selection}
 
   async function populateModelSelect(provider) {
     modelSelect.innerHTML = ""; // clear old options
-    //modelGroup.style.display = "block"; // make it visible
+    modelGroup.style.display = "block"; // make it visible
 
     let models = [];
     switch (provider) {
@@ -1066,8 +1063,6 @@ ${message.selection}
         break;
     }
 
-    console.log(`Models: ${models}`);
-
     models.forEach((m) => {
       const opt = document.createElement("option");
       opt.value = m;
@@ -1077,7 +1072,7 @@ ${message.selection}
 
     // if no models found, you might hide the group
     if (models.length === 0) {
-      //modelGroup.style.display = "none";
+      modelGroup.style.display = "none";
     }
   }
 
@@ -1135,18 +1130,6 @@ ${message.selection}
 
     // Append it under the message
     messageDiv.appendChild(tokenElement);
-  }
-
-  function addNameToMessage(messageId, modelName) {
-    const messageDiv = document.getElementById(messageId);
-    if (!messageDiv) return;
-
-    // Create tokens element
-    const nameElement = document.createElement("div");
-    nameElement.className = "response-name";
-    nameElement.textContent = `${modelName}`;
-    // Append it under the message
-    messageDiv.appendChild(nameElement);
   }
 
   function addMessageToChat(type, content) {

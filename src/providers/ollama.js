@@ -1,5 +1,17 @@
-// ollama_response.js
-
+export async function fetchLocalModels(ollamaUrl = "http://localhost:11434") {
+  try {
+    const res = await fetch(`${ollamaUrl}/api/tags`);
+    if (!res.ok) {
+      throw new Error(`Ollama API error: ${res.status} ${res.statusText}`);
+    }
+    const data = await res.json();
+    // Ollama returns { models: [ { name: 'modelA', ... }, { name: 'modelB', … } ] }
+    return data.models.map((m) => m.name);
+  } catch (err) {
+    console.error("Failed to fetch local Ollama models:", err);
+    return [];
+  }
+}
 /**
  * Generate a response from Ollama without using chat history
  * @param {string} prompt - The user's prompt
@@ -28,7 +40,6 @@ export async function generateOllamaResponse(
       temperature: parseFloat(temperature),
     }),
   });
-
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`API returned ${response.status}: ${errorText}`);
